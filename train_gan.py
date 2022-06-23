@@ -46,7 +46,7 @@ def main(
             img = img.to(device)
             class_idx = class_idx.to(device)
             x_real, y_real = Variable(
-                mnist_dim.view(-1, mnist_dim).to(device)), Variable(torch.ones(batch_size, 1).to(device))
+                img.view(-1, mnist_dim).to(device)), Variable(torch.ones(batch_size, 1).to(device))
             z = Variable(torch.randn(batch_size, z_dim).to(device))
             x_fake, y_fake = G(z), Variable(
                 torch.zeros(batch_size, 1).to(device))
