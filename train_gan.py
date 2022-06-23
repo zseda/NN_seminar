@@ -9,17 +9,14 @@ from data_loader import get_dataloader
 from model import Discriminator, Generator
 
 
-def D_train(D, G, x, batch_size, device, z_dim, criterion, mnist_dim, D_optimizer):
+def D_train(D, D_output, G, x, batch_size, device, z_dim, criterion, mnist_dim, D_optimizer):
     #=======================Train the discriminator=======================#
-    D.zero_grad()
 
     # train discriminator on real
     x_real, y_real = x.view(-1, mnist_dim), torch.ones(batch_size, 1)
     x_real, y_real = Variable(x_real.to(device)), Variable(y_real.to(device))
 
-    D_output = D(x_real)
     D_real_loss = criterion(D_output, y_real)
-    D_real_score = D_output
 
     # train discriminator on synthetic
     z = Variable(torch.randn(batch_size, z_dim).to(device))
@@ -27,7 +24,6 @@ def D_train(D, G, x, batch_size, device, z_dim, criterion, mnist_dim, D_optimize
 
     D_output = D(x_fake)
     D_fake_loss = criterion(D_output, y_fake)
-    D_fake_score = D_output
 
     # gradient backprop & optimize ONLY D's parameters
     D_loss = D_real_loss + D_fake_loss
@@ -59,13 +55,15 @@ def main(
     epochs: int = typer.Option(20),
     batch_size: int = typer.Option(16),
     lr: float = typer.Option(0.0002),
-    z_dim: int = typer.Option(100)
+    z_dim: int = typer.Option(100),
+
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"batch_size: {batch_size}")
 
     # load data
-    loader_train, loader_test = get_dataloader(batch_size=batch_size)
+    loader_train, loader_test, mnist_dim = get_dataloader(
+        batch_size=batch_size)
 
     # initialize G
     G = Generator(g_input_dim=z_dim)
@@ -82,6 +80,7 @@ def main(
     # loss
     criterion = nn.BCELoss()
 
+    D_losses, G_losses = [], []
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
         for batch in loader_train:
@@ -95,6 +94,14 @@ def main(
 
             # discriminator
             D_out = D(generated_images)
+
+            D_losses.append(D_train(D, D_out, G, img,
+                            batch_size, device, z_dim, criterion, mnist_dim, D_optimizer))
+            G_losses.append(G_train(D_out, generated_images,
+                            batch_size, device, z_dim, criterion, G_optimizer))
+
+            print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
+                (e), epochs, torch.mean(torch.FloatTensor(D_losses)), torch.mean(torch.FloatTensor(G_losses))))
 
 
 if __name__ == "__main__":
