@@ -9,33 +9,8 @@ from data_loader import get_dataloader
 from model import Discriminator, Generator
 
 
-def D_train(D, D_output, G, x, batch_size, device, z_dim, criterion, mnist_dim, D_optimizer):
-    #=======================Train the discriminator=======================#
-
-    # train discriminator on real
-    x_real, y_real = x.view(-1, mnist_dim), torch.ones(batch_size, 1)
-    x_real, y_real = Variable(x_real.to(device)), Variable(y_real.to(device))
-
-    D_real_loss = criterion(D_output, y_real)
-
-    # train discriminator on synthetic
-    z = Variable(torch.randn(batch_size, z_dim).to(device))
-    x_fake, y_fake = G(z), Variable(torch.zeros(batch_size, 1).to(device))
-
-    D_output = D(x_fake)
-    D_fake_loss = criterion(D_output, y_fake)
-
-    # gradient backprop & optimize ONLY D's parameters
-    D_loss = D_real_loss + D_fake_loss
-    D_loss.backward()
-    D_optimizer.step()
-
-    return D_loss.data.item()
-
-
 def G_train(D, G, batch_size, device, z_dim, criterion, G_optimizer):
     #=======================Train the generator=======================#
-    G.zero_grad()
 
     z = Variable(torch.randn(batch_size, z_dim).to(device))
     y = Variable(torch.ones(batch_size, 1).to(device))
@@ -87,18 +62,26 @@ def main(
             img, class_idx = batch
             img = img.to(device)
             class_idx = class_idx.to(device)
+            x_real, y_real = Variable(
+                mnist_dim.view(-1, mnist_dim).to(device)), Variable(torch.ones(batch_size, 1).to(device))
             z = Variable(torch.randn(batch_size, z_dim).to(device))
+            x_fake, y_fake = G(z), Variable(
+                torch.zeros(batch_size, 1).to(device))
 
             # generate images via G
             generated_images = G(z)
 
             # discriminator
-            D_out = D(generated_images)
+            D_out = D(x_real)
+            D_real_loss = criterion(D_out, y_real)
+            D_out = D(x_fake)
+            D_fake_loss = criterion(D_out, y_fake)
 
-            D_losses.append(D_train(D, D_out, G, img,
-                            batch_size, device, z_dim, criterion, mnist_dim, D_optimizer))
-            G_losses.append(G_train(D_out, generated_images,
-                            batch_size, device, z_dim, criterion, G_optimizer))
+            # gradient backprop & optimize ONLY D's parameters
+            D_loss = D_real_loss + D_fake_loss
+            D_loss.backward()
+            D_optimizer.step()
+            D_losses.append(D_loss.data.item())
 
             print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
                 (e), epochs, torch.mean(torch.FloatTensor(D_losses)), torch.mean(torch.FloatTensor(G_losses))))
