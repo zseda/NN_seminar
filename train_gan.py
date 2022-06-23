@@ -68,9 +68,6 @@ def main(
             x_fake, y_fake = G(z), Variable(
                 torch.zeros(batch_size, 1).to(device))
 
-            # generate images via G
-            generated_images = G(z)
-
             # discriminator
             D_out = D(x_real)
             D_real_loss = criterion(D_out, y_real)
@@ -82,6 +79,16 @@ def main(
             D_loss.backward()
             D_optimizer.step()
             D_losses.append(D_loss.data.item())
+
+            # generate images via G
+            G_output = G(z)
+            D_out = D(G_output)
+            G_loss = criterion(D_out, y_real)
+
+            # gradient backprop & optimize ONLY G's parameters
+            G_loss.backward()
+            G_optimizer.step()
+            G_losses.append(G_loss.data.item())
 
             print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
                 (e), epochs, torch.mean(torch.FloatTensor(D_losses)), torch.mean(torch.FloatTensor(G_losses))))
