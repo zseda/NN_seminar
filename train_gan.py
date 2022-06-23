@@ -21,7 +21,7 @@ def D_train(D, G, x, batch_size, device, z_dim, criterion, mnist_dim, D_optimize
     D_real_loss = criterion(D_output, y_real)
     D_real_score = D_output
 
-    # train discriminator on facke
+    # train discriminator on synthetic
     z = Variable(torch.randn(batch_size, z_dim).to(device))
     x_fake, y_fake = G(z), Variable(torch.zeros(batch_size, 1).to(device))
 
