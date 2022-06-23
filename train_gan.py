@@ -2,12 +2,57 @@ import typer
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.autograd import Variable 
+from torch.autograd import Variable
 from loguru import logger
 
 from data_loader import get_dataloader
 from model import Discriminator, Generator
 
+
+def D_train(D, G, x, batch_size, device, z_dim, criterion, mnist_dim, D_optimizer):
+    #=======================Train the discriminator=======================#
+    D.zero_grad()
+
+    # train discriminator on real
+    x_real, y_real = x.view(-1, mnist_dim), torch.ones(batch_size, 1)
+    x_real, y_real = Variable(x_real.to(device)), Variable(y_real.to(device))
+
+    D_output = D(x_real)
+    D_real_loss = criterion(D_output, y_real)
+    D_real_score = D_output
+
+    # train discriminator on facke
+    z = Variable(torch.randn(batch_size, z_dim).to(device))
+    x_fake, y_fake = G(z), Variable(torch.zeros(batch_size, 1).to(device))
+
+    D_output = D(x_fake)
+    D_fake_loss = criterion(D_output, y_fake)
+    D_fake_score = D_output
+
+    # gradient backprop & optimize ONLY D's parameters
+    D_loss = D_real_loss + D_fake_loss
+    D_loss.backward()
+    D_optimizer.step()
+
+    return D_loss.data.item()
+
+
+def G_train(D, G, batch_size, device, z_dim, criterion, G_optimizer):
+    #=======================Train the generator=======================#
+    G.zero_grad()
+
+    z = Variable(torch.randn(batch_size, z_dim).to(device))
+    y = Variable(torch.ones(batch_size, 1).to(device))
+
+    G_output = G(z)
+    D_output = D(G_output)
+    G_loss = criterion(D_output, y)
+
+    # gradient backprop & optimize ONLY G's parameters
+    G_loss.backward()
+    G_optimizer.step()
+
+    return G_loss.data.item()
 
 
 def main(
@@ -35,7 +80,7 @@ def main(
     D_optimizer = optim.Adam(D.parameters(), lr=lr)
 
     # loss
-    criterion = nn.BCELoss() 
+    criterion = nn.BCELoss()
 
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
@@ -52,10 +97,5 @@ def main(
             D_out = D(generated_images)
 
 
-
 if __name__ == "__main__":
     typer.run(main)
-
-
-
-
