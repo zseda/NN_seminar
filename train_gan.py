@@ -9,28 +9,11 @@ from data_loader import get_dataloader
 from model import Discriminator, Generator
 
 
-def G_train(D, G, batch_size, device, z_dim, criterion, G_optimizer):
-    #=======================Train the generator=======================#
-
-    z = Variable(torch.randn(batch_size, z_dim).to(device))
-    y = Variable(torch.ones(batch_size, 1).to(device))
-
-    G_output = G(z)
-    D_output = D(G_output)
-    G_loss = criterion(D_output, y)
-
-    # gradient backprop & optimize ONLY G's parameters
-    G_loss.backward()
-    G_optimizer.step()
-
-    return G_loss.data.item()
-
-
 def main(
     epochs: int = typer.Option(20),
     batch_size: int = typer.Option(16),
     lr: float = typer.Option(0.0002),
-    z_dim: int = typer.Option(100),
+    z_dim: int = typer.Option(100)
 
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
