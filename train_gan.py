@@ -65,6 +65,7 @@ def main(
                 torch.zeros(batch_size, 1).to(device))
 
             # discriminator
+            D.zero_grad()
             D_out = D(img)
             D_real_loss = criterion(D_out, y_real)
             D_out = D(x_fake)
@@ -76,6 +77,7 @@ def main(
             D_optimizer.step()
 
             # generate images via G
+            G.zero_grad()
             G_output = G(z)
             D_out = D(G_output)
             G_loss = criterion(D_out, y_real)
