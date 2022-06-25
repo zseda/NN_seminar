@@ -7,10 +7,19 @@ from torchvision import transforms
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        torch.nn.init.normal(m.weight, 0.0, 0.02)
+        nn.init.xavier_normal_(m.weight)
+        nn.init.constant_(m.bias.data, 0.0)
     elif classname.find('BatchNorm2d') != -1:
-        torch.nn.init.normal(m.weight, 1.0, 0.02)
-        torch.nn.init.constant(m.bias, 0.0)
+        nn.init.constant_(m.weight, 1.0)
+        nn.init.constant_(m.bias.data, 0.0)
+
+    def weight_init(self, layer):
+        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.ConvTranspose2d):
+            nn.init.xavier_normal_(layer.weight)
+            nn.init.constant_(layer.bias.data, 0.0)
+        elif isinstance(layer, nn.BatchNorm2d):
+            nn.init.constant_(layer.weight, 1.0)
+            nn.init.constant_(layer.bias.data, 0.0)
 
 
 class Generator(nn.Module):
