@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 def main(
     root_path: str = typer.Option('.'),
     epochs: int = typer.Option(20),
-    batch_size: int = typer.Option(100),
+    batch_size: int = typer.Option(16),
     lr: float = typer.Option(0.0002),
     z_dim: int = typer.Option(100),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
@@ -71,11 +71,6 @@ def main(
             D_loss = D_real_loss + D_fake_loss
             D_loss.backward()
             D_optimizer.step()
-            if global_step % 50 == 0:
-                tb_writer.add_scalar(
-                    'train/loss', D_loss.item(), global_step=global_step)
-                tb_writer.flush()
-            D_losses.append(D_loss.data.item())
 
             # generate images via G
             G_output = G(z)
@@ -85,6 +80,11 @@ def main(
             # gradient backprop & optimize ONLY G's parameters
             G_loss.backward()
             G_optimizer.step()
+            if global_step % 50 == 0:
+                tb_writer.add_scalar(
+                    'train/loss', D_loss.item(), global_step=global_step)
+                tb_writer.flush()
+            D_losses.append(D_loss.data.item())
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
                     'train/loss', G_loss.item(), global_step=global_step)
