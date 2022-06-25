@@ -18,7 +18,7 @@ def main(
     root_path: str = typer.Option('.'),
     epochs: int = typer.Option(20),
     batch_size: int = typer.Option(100),
-    lr: float = typer.Option(0.0002),
+    lr: float = typer.Option(0.0001),
     z_dim: int = typer.Option(100),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
 
@@ -105,7 +105,10 @@ def main(
             # save network
             if e % 1 == 0:
                 torch.save(D.state_dict(), Path(root_path, "logs",
-                           experiment_id, f"model_epoch_{e:0>3}.pth").as_posix())
+                           experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
+            if e % 1 == 0:
+                torch.save(G.state_dict(), Path(root_path, "logs",
+                           experiment_id, f"model_epoch_G{e:0>3}.pth").as_posix())
 
 
 if __name__ == "__main__":
