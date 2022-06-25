@@ -10,13 +10,14 @@ from data_loader import get_dataloader
 from matplotlib import pyplot
 from model import Discriminator, Generator
 from torchvision.utils import make_grid
+from model import weights_init_normal
 from torch.utils.tensorboard import SummaryWriter
 
 
 def main(
     root_path: str = typer.Option('.'),
     epochs: int = typer.Option(20),
-    batch_size: int = typer.Option(16),
+    batch_size: int = typer.Option(100),
     lr: float = typer.Option(0.0002),
     z_dim: int = typer.Option(100),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
@@ -35,10 +36,12 @@ def main(
     # initialize G
     G = Generator(g_input_dim=z_dim)
     G.to(device)
+    G.apply(weights_init_normal)
 
     # initialize D
     D = Discriminator()
     D.to(device)
+    D.apply(weights_init_normal)
 
     # optimizer
     G_optimizer = optim.Adam(G.parameters(), lr=lr)
