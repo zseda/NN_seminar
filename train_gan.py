@@ -82,12 +82,12 @@ def main(
             G_optimizer.step()
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
-                    'train/loss', D_loss.item(), global_step=global_step)
+                    'train/disciriminator_loss', D_loss.item(), global_step=global_step)
                 tb_writer.flush()
             D_losses.append(D_loss.data.item())
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
-                    'train/loss', G_loss.item(), global_step=global_step)
+                    'train/generator_loss', G_loss.item(), global_step=global_step)
                 tb_writer.flush()
             G_losses.append(G_loss.data.item())
 
