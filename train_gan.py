@@ -121,6 +121,9 @@ def main(
                 logging
                 -------
             """
+            plot_img = (img + 1.0) / 2.0
+            plot_output = (G_output + 1.0) / 2.0
+            
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
                     'train/disciriminator_loss', D_loss.item(), global_step=global_step)
@@ -134,9 +137,9 @@ def main(
 
             if global_step % 100 == 0:
                 tb_writer.add_image(
-                    f"train/img", make_grid(img), global_step=global_step)
+                    f"train/img", make_grid(plot_img), global_step=global_step)
                 tb_writer.add_image(
-                    f"train/pred", make_grid(G_output), global_step=global_step)
+                    f"train/pred", make_grid(plot_output), global_step=global_step)
 
         """
             ------
