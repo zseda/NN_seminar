@@ -7,7 +7,6 @@ from loguru import logger
 from pathlib import Path
 import uuid
 from data_loader import get_dataloader
-from matplotlib import pyplot
 from model import Discriminator, Generator
 from torchvision.utils import make_grid
 from model import weights_init_normal
@@ -17,8 +16,8 @@ from torch.utils.tensorboard import SummaryWriter
 def main(
     root_path: str = typer.Option('.'),
     epochs: int = typer.Option(20),
-    batch_size: int = typer.Option(100),
-    lr: float = typer.Option(9e-6),
+    batch_size: int = typer.Option(256),
+    lr: float = typer.Option(1e-4),
     z_dim: int = typer.Option(100),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
 
@@ -44,8 +43,8 @@ def main(
     D.apply(weights_init_normal)
 
     # optimizer
-    G_optimizer = optim.Adam(G.parameters(), lr=lr)
-    D_optimizer = optim.Adam(D.parameters(), lr=lr)
+    G_optimizer = optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
+    D_optimizer = optim.Adam(D.parameters(), lr=lr, betas=(0.5, 0.999))
 
     # loss
     criterion = nn.BCELoss()
@@ -66,17 +65,18 @@ def main(
             img, class_idx = batch
             img = img.to(device)
             class_idx = class_idx.to(device)
+            actual_batch_size = img.shape[0]
 
             # reset gradients
             D.zero_grad()
             G.zero_grad()
 
             # create labels
-            y_real = Variable(torch.ones(batch_size, 1).to(device))
-            y_fake = Variable(torch.zeros(batch_size, 1).to(device))
+            y_real = Variable(torch.ones(actual_batch_size, 1).to(device))
+            y_fake = Variable(torch.zeros(actual_batch_size, 1).to(device))
 
             # create noise for G
-            z = Variable(torch.randn(batch_size, z_dim).to(device))
+            z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
 
             # generate images for D
             x_fake = G(z)
@@ -93,7 +93,7 @@ def main(
             D_fake_loss = criterion(D_out, y_fake)
 
             # gradient backprop & optimize ONLY D's parameters
-            D_loss = D_real_loss + D_fake_loss
+            D_loss = (D_real_loss + D_fake_loss) / 2.0
             D_loss.backward()
             D_optimizer.step()
 
@@ -107,7 +107,7 @@ def main(
             G.zero_grad()
 
             # generate images via G
-            z = Variable(torch.randn(batch_size, z_dim).to(device))
+            z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
             G_output = G(z)
             D_out = D(G_output)
             G_loss = criterion(D_out, y_real)
