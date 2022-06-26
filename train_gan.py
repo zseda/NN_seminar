@@ -18,7 +18,7 @@ def main(
     root_path: str = typer.Option('.'),
     epochs: int = typer.Option(20),
     batch_size: int = typer.Option(100),
-    lr: float = typer.Option(1e-5),
+    lr: float = typer.Option(9e-6),
     z_dim: int = typer.Option(100),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
 
