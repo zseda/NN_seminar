@@ -138,20 +138,20 @@ def main(
                 tb_writer.add_image(
                     f"train/pred", make_grid(G_output), global_step=global_step)
 
-            """
-                ------
-                saving
-                ------
-            """
-            # save D
-            if e % 1 == 0:
-                torch.save(D.state_dict(), Path(root_path, "logs",
-                           experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
+        """
+            ------
+            saving
+            ------
+        """
+        # save D
+        if e % 1 == 0:
+            torch.save(D.state_dict(), Path(root_path, "logs",
+                        experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
 
-            # save G
-            if e % 1 == 0:
-                torch.save(G.state_dict(), Path(root_path, "logs",
-                           experiment_id, f"model_epoch_G{e:0>3}.pth").as_posix())
+        # save G
+        if e % 1 == 0:
+            torch.save(G.state_dict(), Path(root_path, "logs",
+                        experiment_id, f"model_epoch_G{e:0>3}.pth").as_posix())
 
 
 if __name__ == "__main__":
