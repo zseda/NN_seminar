@@ -25,16 +25,48 @@ def weight_init(self, layer):
         nn.init.constant_(layer.bias.data, 0.0)
 
 
+class Block(nn.Module):
+    def __init__(self, in_channels: int):
+        super().__init__()
+        self.c1 = nn.Conv2d(in_channels=in_channels, out_channels=int(in_channels/2),
+                            kernel_size=3, stride=1, padding="same")
+        self.b1 = nn.BatchNorm2d(num_features=int(in_channels/2))
+        
+        self.c2 = nn.Conv2d(in_channels=int(in_channels/2), out_channels=int(in_channels/2),
+                            kernel_size=3, stride=1, padding="same")
+        self.b2 = nn.BatchNorm2d(num_features=int(in_channels/2))
+
+        self.c3 = nn.Conv2d(in_channels=int(in_channels/2), out_channels=in_channels,
+                            kernel_size=3, stride=1, padding="same")
+        self.b3 = nn.BatchNorm2d(num_features=in_channels)
+
+    def forward(self, x):
+        features_in = x
+        
+        x = self.c1(x)
+        x = self.b1(x)
+        x = F.leaky_relu(x)
+
+        x = self.c2(x)
+        x = self.b2(x)
+        x = F.leaky_relu(x)
+
+        x = self.c3(x)
+        x = self.b3(x)
+        x = F.leaky_relu(x)
+
+        x = features_in + x
+        
+        return x
+
+
 class Generator(nn.Module):
     def __init__(self, g_input_dim):
         super(Generator, self).__init__()
-        self.fc1 = nn.Linear(in_features=g_input_dim, out_features=7*7)
-        self.c1 = nn.Conv2d(in_channels=1, out_channels=256,
-                            kernel_size=3, stride=1, padding="same")
-        self.c2 = nn.Conv2d(in_channels=256, out_channels=128,
-                            kernel_size=3, stride=1, padding="same")
-        self.c3 = nn.Conv2d(in_channels=128, out_channels=64,
-                            kernel_size=3, stride=1, padding="same")
+        self.fc1 = nn.Linear(in_features=g_input_dim, out_features=7*7*64)
+        self.block1 = Block(in_channels=64)
+        self.block2 = Block(in_channels=64)
+        self.block3 = Block(in_channels=64)
         self.c4 = nn.Conv2d(in_channels=64, out_channels=1,
                             kernel_size=3, stride=1, padding="same")
 
@@ -43,16 +75,16 @@ class Generator(nn.Module):
         x = F.leaky_relu(self.fc1(x), 0.2)
 
         # transform to 2D space
-        x = x.view(-1, 1, 7, 7)
+        x = x.view(-1, 64, 7, 7)
 
         # apply convolutions and upsample
-        x = F.leaky_relu(self.c1(x), 0.2)
-
+        x = self.block1(x)
         x = F.upsample_bilinear(x, size=(14, 14))
-        x = F.leaky_relu(self.c2(x), 0.2)
 
+        x = self.block2(x)
         x = F.upsample_bilinear(x, size=(28, 28))
-        x = F.leaky_relu(self.c3(x), 0.2)
+
+        x = self.block3(x)
 
         return torch.tanh(self.c4(x))
 
@@ -62,12 +94,19 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.c1 = nn.Conv2d(in_channels=1, out_channels=64,
                             kernel_size=3, stride=2, padding=1)
+        self.b1 = nn.BatchNorm2d(num_features=64)
+
         self.c2 = nn.Conv2d(in_channels=64, out_channels=128,
                             kernel_size=3, stride=2, padding=1)
+        self.b2 = nn.BatchNorm2d(num_features=128)
+
         self.c3 = nn.Conv2d(in_channels=128, out_channels=256,
                             kernel_size=3, stride=1, padding="same")
+        self.b3 = nn.BatchNorm2d(num_features=256)
+
         self.c4 = nn.Conv2d(in_channels=256, out_channels=128,
                             kernel_size=3, stride=1, padding="same")
+        self.b4 = nn.BatchNorm2d(num_features=128)
 
         self.fc_num_features = 128*7*7
         self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=1)
@@ -76,19 +115,19 @@ class Discriminator(nn.Module):
     def forward(self, x):
         # x => [N, 1, 28, 28]
 
-        x = F.leaky_relu(self.c1(x), 0.2)
+        x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
         # x => [N, 64, 14, 14]
         x = F.dropout(x, 0.3)
 
-        x = F.leaky_relu(self.c2(x), 0.2)
+        x = F.leaky_relu(self.b2(self.c2(x)), 0.2)
         # x => [N, 128, 7, 7]
         x = F.dropout(x, 0.3)
 
-        x = F.leaky_relu(self.c3(x), 0.2)
+        x = F.leaky_relu(self.b3(self.c3(x)), 0.2)
         # x => [N, 256, 7, 7]
         x = F.dropout(x, 0.3)
 
-        x = F.leaky_relu(self.c4(x), 0.2)
+        x = F.leaky_relu(self.b4(self.c4(x)), 0.2)
         x = F.dropout(x, 0.3)
         # x => [N, 128, 7, 7]
 
