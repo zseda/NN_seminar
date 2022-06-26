@@ -18,7 +18,7 @@ def main(
     root_path: str = typer.Option('.'),
     epochs: int = typer.Option(20),
     batch_size: int = typer.Option(100),
-    lr: float = typer.Option(0.0001),
+    lr: float = typer.Option(1e-5),
     z_dim: int = typer.Option(100),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
 
@@ -88,6 +88,7 @@ def main(
             """
             D_out = D(img)
             D_real_loss = criterion(D_out, y_real)
+
             D_out = D(x_fake)
             D_fake_loss = criterion(D_out, y_fake)
 
@@ -101,8 +102,12 @@ def main(
                 train G
                 -------
             """
-            # generate images via G
+            # reset gradients
+            D.zero_grad()
             G.zero_grad()
+
+            # generate images via G
+            z = Variable(torch.randn(batch_size, z_dim).to(device))
             G_output = G(z)
             D_out = D(G_output)
             G_loss = criterion(D_out, y_real)
