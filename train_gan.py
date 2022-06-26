@@ -54,18 +54,38 @@ def main(
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
         for batch in loader_train:
+            """
+                -----------
+                preparation
+                -----------
+            """
+            # for logging
+            global_step += 1
+
+            # decompose batch data
             img, class_idx = batch
             img = img.to(device)
             class_idx = class_idx.to(device)
-            global_step += 1
-            x_real, y_real = Variable(
-                img.view(-1, mnist_dim).to(device)), Variable(torch.ones(batch_size, 1).to(device))
-            z = Variable(torch.randn(batch_size, z_dim).to(device))
-            x_fake, y_fake = G(z), Variable(
-                torch.zeros(batch_size, 1).to(device))
 
-            # discriminator
+            # reset gradients
             D.zero_grad()
+            G.zero_grad()
+
+            # create labels
+            y_real = Variable(torch.ones(batch_size, 1).to(device))
+            y_fake = Variable(torch.zeros(batch_size, 1).to(device))
+
+            # create noise for G
+            z = Variable(torch.randn(batch_size, z_dim).to(device))
+
+            # generate images for D
+            x_fake = G(z)
+
+            """ 
+                -------
+                train D
+                -------
+            """
             D_out = D(img)
             D_real_loss = criterion(D_out, y_real)
             D_out = D(x_fake)
@@ -76,6 +96,11 @@ def main(
             D_loss.backward()
             D_optimizer.step()
 
+            """ 
+                -------
+                train G
+                -------
+            """
             # generate images via G
             G.zero_grad()
             G_output = G(z)
@@ -85,6 +110,12 @@ def main(
             # gradient backprop & optimize ONLY G's parameters
             G_loss.backward()
             G_optimizer.step()
+
+            """
+                -------
+                logging
+                -------
+            """
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
                     'train/disciriminator_loss', D_loss.item(), global_step=global_step)
@@ -102,10 +133,17 @@ def main(
                 tb_writer.add_image(
                     f"train/pred", make_grid(G_output), global_step=global_step)
 
-            # save network
+            """
+                ------
+                saving
+                ------
+            """
+            # save D
             if e % 1 == 0:
                 torch.save(D.state_dict(), Path(root_path, "logs",
                            experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
+
+            # save G
             if e % 1 == 0:
                 torch.save(G.state_dict(), Path(root_path, "logs",
                            experiment_id, f"model_epoch_G{e:0>3}.pth").as_posix())
