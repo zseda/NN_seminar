@@ -81,7 +81,7 @@ def main(
             y_fake = Variable(torch.zeros(actual_batch_size, 1).to(device))
 
             one_hot_labels.resize_(actual_batch_size, 10).zero_()
-            one_hot_labels.scatter_(1, class_idx.view(batch_size, 1), 1)
+            one_hot_labels.scatter_(1, class_idx.view(actual_batch_size, 1), 1)
 
             # create noise for G
             z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
@@ -119,7 +119,7 @@ def main(
             rand_y = torch.from_numpy(
                 np.random.randint(0, 10, size=(actual_batch_size, 1))).to(device)
             z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
-            one_hot_labels.scatter_(1, rand_y.view(batch_size, 1), 1)
+            one_hot_labels.scatter_(1, rand_y.view(actual_batch_size, 1), 1)
             onehotv = Variable(one_hot_labels)
             G_output = G(z, onehotv)
             D_out = D(G_output, onehotv)
