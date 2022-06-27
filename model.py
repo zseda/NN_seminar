@@ -16,6 +16,7 @@ def weights_init_normal(m):
         nn.init.constant_(m.weight, 1.0)
         nn.init.constant_(m.bias.data, 0.0)
 
+
 def weight_init(self, layer):
     if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.ConvTranspose2d):
         nn.init.xavier_normal_(layer.weight)
@@ -31,7 +32,7 @@ class Block(nn.Module):
         self.c1 = nn.Conv2d(in_channels=in_channels, out_channels=int(in_channels/2),
                             kernel_size=3, stride=1, padding="same")
         self.b1 = nn.BatchNorm2d(num_features=int(in_channels/2))
-        
+
         self.c2 = nn.Conv2d(in_channels=int(in_channels/2), out_channels=int(in_channels/2),
                             kernel_size=3, stride=1, padding="same")
         self.b2 = nn.BatchNorm2d(num_features=int(in_channels/2))
@@ -42,7 +43,7 @@ class Block(nn.Module):
 
     def forward(self, x):
         features_in = x
-        
+
         x = self.c1(x)
         x = self.b1(x)
         x = F.leaky_relu(x)
@@ -56,21 +57,25 @@ class Block(nn.Module):
         x = F.leaky_relu(x)
 
         x = features_in + x
-        
+
         return x
 
 
 class Generator(nn.Module):
     def __init__(self, g_input_dim):
         super(Generator, self).__init__()
-        self.fc1 = nn.Linear(in_features=g_input_dim, out_features=7*7*64)
+        self.fc2 = nn.Linear(10, 1000)
+        self.fc1 = nn.Linear(in_features=g_input_dim+1000, out_features=7*7*64)
         self.block1 = Block(in_channels=64)
         self.block2 = Block(in_channels=64)
         self.block3 = Block(in_channels=64)
         self.c4 = nn.Conv2d(in_channels=64, out_channels=1,
                             kernel_size=3, stride=1, padding="same")
 
-    def forward(self, x):
+    def forward(self, x, labels):
+        y_ = self.fc2(labels)
+        y_ = F.relu(y_)
+        x = torch.cat([x, y_], 1)
         # input is noise
         x = F.leaky_relu(self.fc1(x), 0.2)
 
@@ -109,10 +114,13 @@ class Discriminator(nn.Module):
         self.b4 = nn.BatchNorm2d(num_features=128)
 
         self.fc_num_features = 128*7*7
-        self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=1)
+        #self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=1)
+        self.fc1 = nn.Linear(128*7*7+1000, 1024)
+        self.fc2 = nn.Linear(1024, 1)
+        self.fc3 = nn.Linear(10, 1000)
 
     # forward method
-    def forward(self, x):
+    def forward(self, x, labels):
         # x => [N, 1, 28, 28]
 
         x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
@@ -133,5 +141,10 @@ class Discriminator(nn.Module):
 
         x = x.view(-1, self.fc_num_features)
         # x => [N, 128*7*7]
-
-        return torch.sigmoid(self.fc1(x))
+        y_ = self.fc3(labels)
+        y_ = F.relu(y_)
+        x = torch.cat([x, y_], 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return F.sigmoid(x)
