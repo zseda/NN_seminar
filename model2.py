@@ -6,13 +6,10 @@ from loguru import logger
 
 
 def weights_init_normal(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        logger.debug(f"init conv weights '{classname}'")
+    if isinstance(m, nn.Conv2d):
         nn.init.xavier_normal_(m.weight)
         nn.init.constant_(m.bias.data, 0.0)
-    elif classname.find('BatchNorm2d') != -1:
-        logger.debug(f"init batchnorm weights '{classname}'")
+    if isinstance(m, nn.BatchNorm2d):
         nn.init.constant_(m.weight, 1.0)
         nn.init.constant_(m.bias.data, 0.0)
 
@@ -147,7 +144,7 @@ class Discriminator(nn.Module):
         # size of y : (batch_size, 32, 14, 14)
 
         # concat image layer and label layer output
-        xy = torch.cat([x, y], dim=1)
+        x = torch.cat([x, y], dim=1)
         # size of xy : (batch_size, 64, 14, 14)
 
         x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
