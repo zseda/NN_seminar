@@ -64,8 +64,8 @@ class Generator(nn.Module):
         self.fc1 = nn.Linear(in_features=g_input_dim, out_features=7*7*128)
         # label input layer : (batch_size, 10, 1, 1)
         self.layer_y = nn.Linear(in_features=10, out_features=7*7*128)
-        self.block1 = Block(in_channels=64)
-        self.block2 = Block(in_channels=64)
+        self.block1 = Block(in_channels=256)
+        self.block2 = Block(in_channels=128)
         self.block3 = Block(in_channels=64)
         self.c4 = nn.Conv2d(in_channels=64, out_channels=1,
                             kernel_size=3, stride=1, padding="same")
@@ -83,7 +83,7 @@ class Generator(nn.Module):
 
         # concat x and y
         x = torch.cat([x, y], dim=1)
-        # xy size : (batch_size, 256, 3, 3)
+        # xy size : (batch_size, 256, 7, 7)
 
         # apply convolutions and upsample
         x = self.block1(x)
