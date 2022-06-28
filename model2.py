@@ -5,6 +5,18 @@ from torchvision import transforms
 from loguru import logger
 
 
+def weights_init_normal(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        logger.debug(f"init conv weights '{classname}'")
+        nn.init.xavier_normal_(m.weight)
+        nn.init.constant_(m.bias.data, 0.0)
+    elif classname.find('BatchNorm2d') != -1:
+        logger.debug(f"init batchnorm weights '{classname}'")
+        nn.init.constant_(m.weight, 1.0)
+        nn.init.constant_(m.bias.data, 0.0)
+
+
 def weight_init(self, layer):
     if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.ConvTranspose2d):
         nn.init.xavier_normal_(layer.weight)
@@ -91,6 +103,21 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
+        # creating layer for image input , input size : (batch_size, 1, 28, 28)
+        self.layer_x = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=32,
+                                               kernel_size=4, stride=2, padding=1, bias=False),
+                                     # out size : (batch_size, 32, 14, 14)
+                                     nn.LeakyReLU(0.2, inplace=True),
+                                     # out size : (batch_size, 32, 14, 14)
+                                     )
+
+        # creating layer for label input, input size : (batch_size, 10, 28, 28)
+        self.layer_y = nn.Sequential(nn.Conv2d(in_channels=10, out_channels=32,
+                                               kernel_size=4, stride=2, padding=1, bias=False),
+                                     # out size : (batch_size, 32, 14, 14)
+                                     nn.LeakyReLU(0.2, inplace=True),
+                                     # out size : (batch_size, 32, 14, 14)
+                                     )
         self.c1 = nn.Conv2d(in_channels=1, out_channels=64,
                             kernel_size=3, stride=2, padding=1)
         self.b1 = nn.BatchNorm2d(num_features=64)
@@ -103,11 +130,7 @@ class Discriminator(nn.Module):
                             kernel_size=3, stride=1, padding="same")
         self.b3 = nn.BatchNorm2d(num_features=256)
 
-        self.c4 = nn.Conv2d(in_channels=256, out_channels=128,
-                            kernel_size=3, stride=1, padding="same")
-        self.b4 = nn.BatchNorm2d(num_features=128)
-
-        self.fc_num_features = 128*7*7
+        self.fc_num_features = 256*7*7
 
         self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=1)
 
@@ -115,6 +138,17 @@ class Discriminator(nn.Module):
 
     def forward(self, x, label):
         # x => [N, 1, 28, 28]
+        # size of x : (batch_size, 1, 28, 28)
+        x = self.layer_x(x)
+        # size of x : (batch_size, 32, 14, 14)
+
+        # size of y : (batch_size, 10, 28, 28)
+        y = self.layer_y(y)
+        # size of y : (batch_size, 32, 14, 14)
+
+        # concat image layer and label layer output
+        xy = torch.cat([x, y], dim=1)
+        # size of xy : (batch_size, 64, 14, 14)
 
         x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
         # x => [N, 64, 14, 14]
@@ -128,12 +162,8 @@ class Discriminator(nn.Module):
         # x => [N, 256, 7, 7]
         x = F.dropout(x, 0.3)
 
-        x = F.leaky_relu(self.b4(self.c4(x)), 0.2)
-        x = F.dropout(x, 0.3)
-        # x => [N, 128, 7, 7]
-
         x = x.view(-1, self.fc_num_features)
-        # x => [N, 128*7*7]
+        # x => [N, 267*7*7]
         x = self.fc1
 
         return F.sigmoid(x)
