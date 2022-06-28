@@ -8,9 +8,9 @@ from loguru import logger
 from pathlib import Path
 import uuid
 from data_loader import get_dataloader
-from model import Discriminator, Generator
+from model2 import Discriminator, Generator
 from torchvision.utils import make_grid
-from model import weights_init_normal
+from model2 import weights_init_normal
 from torch.utils.tensorboard import SummaryWriter
 
 
