@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 from loguru import logger
 
-
+"""
 def weights_init_normal(m):
     if isinstance(m, nn.Conv2d):
         nn.init.xavier_normal_(m.weight)
@@ -21,17 +21,18 @@ def weight_init(self, layer):
     elif isinstance(layer, nn.BatchNorm2d):
         nn.init.constant_(layer.weight, 1.0)
         nn.init.constant_(layer.bias.data, 0.0)
+"""
 
 
 class Block(nn.Module):
     def __init__(self, in_channels: int):
         super().__init__()
         self.c1 = nn.Conv2d(in_channels=in_channels, out_channels=int(in_channels/2),
-                            kernel_size=3, stride=1, padding="same")
+                            kernel_size=3, stride=2, padding=0, bias=False)
         self.b1 = nn.BatchNorm2d(num_features=int(in_channels/2))
 
         self.c2 = nn.Conv2d(in_channels=int(in_channels/2), out_channels=int(in_channels/2),
-                            kernel_size=3, stride=1, padding="same")
+                            kernel_size=4, stride=2, padding=1, bias=False)
         self.b2 = nn.BatchNorm2d(num_features=int(in_channels/2))
 
         self.c3 = nn.Conv2d(in_channels=int(in_channels/2), out_channels=in_channels,
@@ -39,7 +40,6 @@ class Block(nn.Module):
         self.b3 = nn.BatchNorm2d(num_features=in_channels)
 
     def forward(self, x):
-        features_in = x
 
         x = self.c1(x)
         x = self.b1(x)
@@ -53,8 +53,6 @@ class Block(nn.Module):
         x = self.b3(x)
         x = F.leaky_relu(x)
 
-        x = features_in + x
-
         return x
 
 
@@ -65,8 +63,8 @@ class Generator(nn.Module):
         # label input layer : (batch_size, 10, 1, 1)
         self.layer_y = nn.Linear(in_features=10, out_features=7*7*128)
         self.block1 = Block(in_channels=256)
-        self.block2 = Block(in_channels=128)
-        self.block3 = Block(in_channels=64)
+        self.block2 = Block(in_channels=256)
+        self.block3 = Block(in_channels=128)
         self.c4 = nn.Conv2d(in_channels=64, out_channels=1,
                             kernel_size=3, stride=1, padding="same")
 
