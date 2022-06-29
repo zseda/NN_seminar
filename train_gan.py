@@ -8,9 +8,9 @@ from loguru import logger
 from pathlib import Path
 import uuid
 from data_loader import get_dataloader
-from model2 import Discriminator, Generator
+from model_dcgan import Discriminator, Generator
 from torchvision.utils import make_grid
-from model2 import weights_init_normal
+#from model_dcgan import weights_init_normal
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -36,12 +36,12 @@ def main(
     # initialize G
     G = Generator(g_input_dim=z_dim)
     G.to(device)
-    G.apply(weights_init_normal)
+    # G.apply(weights_init_normal)
 
     # initialize D
     D = Discriminator()
     D.to(device)
-    D.apply(weights_init_normal)
+    # D.apply(weights_init_normal)
 
     # optimizer
     G_optimizer = optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
