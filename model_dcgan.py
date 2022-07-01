@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 from loguru import logger
 
-'''
+
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -24,8 +24,6 @@ def weight_init(self, layer):
     elif isinstance(layer, nn.BatchNorm2d):
         nn.init.constant_(layer.weight, 1.0)
         nn.init.constant_(layer.bias.data, 0.0)
-
-'''
 
 
 class Block(nn.Module):
