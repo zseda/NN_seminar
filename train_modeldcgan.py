@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 def main(
     root_path: str = typer.Option('.'),
     epochs: int = typer.Option(20),
-    batch_size: int = typer.Option(256),
+    batch_size: int = typer.Option(100),
     lr: float = typer.Option(1e-4),
     z_dim: int = typer.Option(100),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
@@ -61,11 +61,23 @@ def main(
     # channel corresponding to label will be set one and all other zeros
     for i in range(10):
         fill[i, i, :, :] = 1
-    # create labels for testing generator
-    test_y = torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-                          * 10).type(torch.LongTensor)
-    # convert to one hot encoding
-    test_Gy = onehot[test_y].to(device)
+
+    countperclass = int(batch_size/10)
+    label0 = np.zeros(countperclass).astype(int)
+    label1 = np.ones(countperclass).astype(int)
+    label2 = (np.ones(countperclass)*2).astype(int)
+    label3 = (np.ones(countperclass)*3).astype(int)
+    label4 = (np.ones(countperclass)*4).astype(int)
+    label5 = (np.ones(countperclass)*5).astype(int)
+    label6 = (np.ones(countperclass)*6).astype(int)
+    label7 = (np.ones(countperclass)*7).astype(int)
+    label8 = (np.ones(countperclass)*8).astype(int)
+    label9 = (np.ones(countperclass)*9).astype(int)
+    y_label = np.concatenate([label0, label1, label2])
+    y_label = np.concatenate([y_label, label3, label4])
+    y_label = np.concatenate([y_label, label5, label6])
+    y_label = np.concatenate([y_label, label7, label8])
+    test_y = np.concatenate([y_label, label9])
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
         for batch in loader_train:
@@ -88,12 +100,13 @@ def main(
             G.zero_grad()
 
             # create labels
-            y_real = Variable(torch.ones(actual_batch_size, 1).to(device))
-            y_fake = Variable(torch.zeros(actual_batch_size, 1).to(device))
+            y_real = Variable(torch.ones(batch_size, 1).to(device))
+            y_fake = Variable(torch.zeros(batch_size, 1).to(device))
 
-            z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
-            # create random y labels for generator
-            y_gen = (torch.rand(actual_batch_size, 1) *
+            z = Variable(torch.randn(batch_size, z_dim).to(device))
+            # create y labels for generator for each class batchsize/10
+
+            y_gen = (torch.rand(batch_size, 1) *
                      10).type(torch.LongTensor).squeeze()
             # convert genarator labels to onehot
             G_y = onehot[y_gen].to(device)
@@ -129,11 +142,12 @@ def main(
             G.zero_grad()
 
             # generate images via G
-            rand_y = torch.from_numpy(
-                np.random.randint(0, 10, size=(actual_batch_size, 1))).to(device)
-            z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
+            # create labels for testing generator
+            # convert to one hot encoding
+            test_Gy = onehot[test_y].to(device)
+            z = Variable(torch.randn(batch_size, z_dim).to(device))
 
-            G_output = G(z, G_y)
+            G_output = G(z, test_Gy)
             D_out = D(G_output, DG_y)
             G_loss = criterion(D_out, y_real)
 
