@@ -154,9 +154,9 @@ class Discriminator(nn.Module):
         x = torch.cat([x, y], dim=1)
         # size of xy : (batch_size, 64, 14, 14)
 
-        x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
+        #x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
         # x => [N, 32, 14, 14]
-        x = F.dropout(x, 0.3)
+        #x = F.dropout(x, 0.3)
 
         x = F.leaky_relu(self.b2(self.c2(x)), 0.2)
         # x => [N, 128, 7, 7]
