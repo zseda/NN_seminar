@@ -65,11 +65,11 @@ class Generator(nn.Module):
     def __init__(self, g_input_dim):
         super(Generator, self).__init__()
         self.fc1 = nn.Linear(in_features=g_input_dim, out_features=7*7*32)
-        self.fc1b = nn.BatchNorm1d(num_features=7*7*32)
+        # self.fc1b = nn.BatchNorm1d(num_features=7*7*32)
         self.fc2 = nn.Linear(in_features=10, out_features=7*7*32)
-        self.fc2b = nn.BatchNorm1d(num_features=7*7*32)
+        # self.fc2b = nn.BatchNorm1d(num_features=7*7*32)
         self.fc3 = nn.Linear(in_features=7*7*64, out_features=7*7*32)
-        self.fc3b = nn.BatchNorm1d(num_features=7*7*32)
+        # self.fc3b = nn.BatchNorm1d(num_features=7*7*32)
 
         self.block1 = Block(in_channels=32)
         self.block2 = Block(in_channels=32)
@@ -80,14 +80,17 @@ class Generator(nn.Module):
 
     def forward(self, x, label):
         # process random noise
-        fc1 = F.leaky_relu(self.fc1b(self.fc1(x)), 0.2)
+        # fc1 = F.leaky_relu(self.fc1b(self.fc1(x)), 0.2)
+        fc1 = F.leaky_relu(self.fc1(x), 0.2)
 
         # process class information
-        fc2 = F.leaky_relu(self.fc2b(self.fc2(label)), 0.2)
+        # fc2 = F.leaky_relu(self.fc2b(self.fc2(label)), 0.2)
+        fc2 = F.leaky_relu(self.fc2(label), 0.2)
 
         # concat data
         fc_concat = torch.cat((fc1, fc2), dim=1)
-        fc3 = F.leaky_relu(self.fc3b(self.fc3(fc_concat)))
+        # fc3 = F.leaky_relu(self.fc3b(self.fc3(fc_concat)))
+        fc3 = F.leaky_relu(self.fc3(fc_concat))
 
         # transform to 2D space
         x = fc3.view(-1, 32, 7, 7)
