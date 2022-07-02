@@ -19,7 +19,7 @@ import timm
 
 def main(
     root_path: str = typer.Option('.'),
-    epochs: int = typer.Option(50),
+    epochs: int = typer.Option(100),
     batch_size: int = typer.Option(100),
     lr: float = typer.Option(1e-4),
     z_dim: int = typer.Option(100),
@@ -38,9 +38,9 @@ def main(
         batch_size=batch_size)
 
     # classifier
-    C = timm.create_model("efficientnet_b0", pretrained=True, num_classes=10, in_chans=1)
-    summary(C)
-    C.to(device)
+    # C = timm.create_model("efficientnet_b0", pretrained=True, num_classes=10, in_chans=1)
+    # summary(C)
+    # C.to(device)
 
     # initialize G
     G = Generator(g_input_dim=z_dim)
@@ -55,12 +55,12 @@ def main(
     D.apply(weights_init_normal)
 
     # optimizer
-    C_optimizer = optim.Adam(C.parameters(), lr=lr, betas=(0.5, 0.999))
+    # C_optimizer = optim.Adam(C.parameters(), lr=lr, betas=(0.5, 0.999))
     G_optimizer = optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
     D_optimizer = optim.Adam(D.parameters(), lr=lr, betas=(0.5, 0.999))
 
     # loss
-    criterion_classification = nn.CrossEntropyLoss()
+    # criterion_classification = nn.CrossEntropyLoss()
     criterion = nn.BCELoss()
     global_step = 0
     D_losses, G_losses = [], []
@@ -94,7 +94,7 @@ def main(
             # reset gradients
             D.zero_grad()
             G.zero_grad()
-            C.zero_grad()
+            # C.zero_grad()
 
             # create labels
             y_real = Variable(torch.ones(actual_batch_size, 1).to(device))
@@ -117,10 +117,10 @@ def main(
                 train C
                 -------
             """
-            C_out = C(img)
-            C_loss = criterion_classification(C_out, labels_real_onehot)
-            C_loss.backward()
-            C_optimizer.step()
+            # C_out = C(img)
+            # C_loss = criterion_classification(C_out, labels_real_onehot)
+            # C_loss.backward()
+            # C_optimizer.step()
 
             """ 
                 -------
@@ -146,7 +146,7 @@ def main(
             # reset gradients
             D.zero_grad()
             G.zero_grad()
-            C.zero_grad()
+            # C.zero_grad()
 
             # generate images via G
             # create labels for testing generator
@@ -158,12 +158,12 @@ def main(
             G_disc_loss = criterion(D_out, y_real)
 
             # test generated images with classifier
-            if e > 5:
-                C_out = C(G_output)
-                G_classification_loss = criterion_classification(C_out, labels_fake_onehot)
-                G_loss = G_disc_loss + 0.5*G_classification_loss
-            else:
-                G_loss = G_disc_loss
+            # if e > 5:
+            #     C_out = C(G_output)
+            #     G_classification_loss = criterion_classification(C_out, labels_fake_onehot)
+            #     G_loss = G_disc_loss + 0.5*G_classification_loss
+            # else:
+            G_loss = G_disc_loss
 
             # gradient backprop & optimize ONLY G's parameters
             G_loss.backward()
@@ -184,15 +184,15 @@ def main(
                 tb_writer.flush()
             D_losses.append(D_loss.data.item())
             if global_step % 50 == 0:
-                tb_writer.add_scalar(
-                    'train/C_loss', C_loss.item(), global_step=global_step)
+                # tb_writer.add_scalar(
+                    # 'train/C_loss', C_loss.item(), global_step=global_step)
                 tb_writer.add_scalar(
                     'train/G_loss', G_loss.item(), global_step=global_step)
                 tb_writer.add_scalar(
                     'train/G_disc_loss', G_disc_loss.item(), global_step=global_step)
-                if e > 5:
-                    tb_writer.add_scalar(
-                        'train/G_classification_loss', G_classification_loss.item(), global_step=global_step)
+                # if e > 5:
+                #     tb_writer.add_scalar(
+                #         'train/G_classification_loss', G_classification_loss.item(), global_step=global_step)
                 tb_writer.flush()
             G_losses.append(G_loss.data.item())
 
