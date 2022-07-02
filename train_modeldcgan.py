@@ -154,10 +154,12 @@ def main(
             G_disc_loss = criterion(D_out, y_real)
 
             # test generated images with classifier
-            C_out = C(G_output)
-            G_classification_loss = criterion_classification(C_out, labels_fake_onehot)
-
-            G_loss = G_disc_loss + G_classification_loss
+            if e > 5:
+                C_out = C(G_output)
+                G_classification_loss = criterion_classification(C_out, labels_fake_onehot)
+                G_loss = G_disc_loss + 0.5*G_classification_loss
+            else:
+                G_loss = G_disc_loss
 
             # gradient backprop & optimize ONLY G's parameters
             G_loss.backward()
@@ -184,8 +186,9 @@ def main(
                     'train/G_loss', G_loss.item(), global_step=global_step)
                 tb_writer.add_scalar(
                     'train/G_disc_loss', G_disc_loss.item(), global_step=global_step)
-                tb_writer.add_scalar(
-                    'train/G_classification_loss', G_classification_loss.item(), global_step=global_step)
+                if e > 5:
+                    tb_writer.add_scalar(
+                        'train/G_classification_loss', G_classification_loss.item(), global_step=global_step)
                 tb_writer.flush()
             G_losses.append(G_loss.data.item())
 
