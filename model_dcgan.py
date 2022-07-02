@@ -104,23 +104,15 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
+        # creating layer for label input, input size : (batch_size, 10)
+        self.layer_label = nn.Sequential(nn.Linear(in_features=10, out_features=100),
+                                         # out size : (batch_size, 32, 14, 14)
+                                         nn.LeakyReLU(0.2, inplace=True),
+                                         # out size : (batch_size, 32, 14, 14)
+                                         )
+
         self.c1 = nn.Conv2d(in_channels=1, out_channels=64,
                             kernel_size=3, stride=2, padding=1)
-        # creating layer for image input , input size : (batch_size, 1, 28, 28)
-        self.layer_x = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=32,
-                                               kernel_size=4, stride=2, padding=1, bias=False),
-                                     # out size : (batch_size, 32, 14, 14)
-                                     nn.LeakyReLU(0.2, inplace=True),
-                                     # out size : (batch_size, 32, 14, 14)
-                                     )
-
-        # creating layer for label input, input size : (batch_size, 10, 28, 28)
-        self.layer_y = nn.Sequential(nn.Conv2d(in_channels=10, out_channels=32,
-                                               kernel_size=4, stride=2, padding=1, bias=False),
-                                     # out size : (batch_size, 32, 14, 14)
-                                     nn.LeakyReLU(0.2, inplace=True),
-                                     # out size : (batch_size, 32, 14, 14)
-                                     )
         self.b1 = nn.BatchNorm2d(num_features=64)
 
         self.c2 = nn.Conv2d(in_channels=64, out_channels=128,
@@ -136,25 +128,24 @@ class Discriminator(nn.Module):
         self.b4 = nn.BatchNorm2d(num_features=128)
 
         self.fc_num_features = 128*7*7
-        self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=1)
-        #self.fc1 = nn.Linear(in_features=10, out_features=7*7*32)
-        #self.fc1 = nn.Linear(128*7*7, 1024)
-        #self.fc2 = nn.Linear(1024, 1)
-    # forward method
+        self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=100)
+        self.fc2 = nn.Linear(in_features=200, out_features=1)
 
-    def forward(self, x, y):
+    def forward(self, x, label):
+        """forward method
+
+        Args:
+            x: image
+            y: label
+
+        Returns:
+            float: prediction in interval [0, 1]
+        """
         # x => [N, 1, 28, 28]
-        x = self.layer_x(x)
-        y = self.layer_y(y)
-        # size of y : (batch_size, 32, 14, 14)
 
-        # concat image layer and label layer output
-        x = torch.cat([x, y], dim=1)
-        # size of xy : (batch_size, 64, 14, 14)
-
-        #x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
+        x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
         # x => [N, 32, 14, 14]
-        #x = F.dropout(x, 0.3)
+        x = F.dropout(x, 0.3)
 
         x = F.leaky_relu(self.b2(self.c2(x)), 0.2)
         # x => [N, 128, 7, 7]
@@ -168,8 +159,21 @@ class Discriminator(nn.Module):
         x = F.dropout(x, 0.3)
         # x => [N, 128, 7, 7]
 
+        # change shape for fc layers
         x = x.view(-1, self.fc_num_features)
         # x => [N, 128*7*7]
+
+        # process image information
         x = self.fc1(x)
+        x = F.leaky_relu(x)
+
+        # process label information
+        label = self.layer_label(label)
+
+        # concat image + label information
+        x = torch.cat((x, label), dim=1)
+        
+        # process both
+        x = self.fc2(x)
 
         return F.sigmoid(x)

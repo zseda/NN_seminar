@@ -1,6 +1,7 @@
 import typer
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import torch.optim as optim
 from torch.autograd import Variable
@@ -28,6 +29,7 @@ def main(
     tb_path = Path(root_path, "logs", experiment_id)
     tb_path.mkdir(parents=True, exist_ok=False)
     tb_writer = SummaryWriter(log_dir=tb_path.as_posix())
+    logger.info(f"experiment id: {experiment_id}")
 
     # load data
     loader_train, loader_test, mnist_dim = get_dataloader(
@@ -52,32 +54,13 @@ def main(
     global_step = 0
     D_losses, G_losses = [], []
 
-    # class labels, there are 10 cats
-    # convert labels to onehot encoding
-    onehot = torch.zeros(10, 10).scatter_(1, torch.tensor(
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).view(10, 1), 1)
-    # reshape labels to image size, with number of labels as channel
-    fill = torch.zeros([10, 10, 28, 28])
-    # channel corresponding to label will be set one and all other zeros
+    # test labels
+    labels_test = list()
+    eye10 = torch.eye(10)
     for i in range(10):
-        fill[i, i, :, :] = 1
+        labels_test.append(eye10[i].repeat(8).view(8, 10))
+    labels_test = torch.stack(labels_test).view(-1, 10).float().to(device)
 
-    countperclass = int(batch_size/10)
-    label0 = np.zeros(countperclass).astype(int)
-    label1 = np.ones(countperclass).astype(int)
-    label2 = (np.ones(countperclass)*2).astype(int)
-    label3 = (np.ones(countperclass)*3).astype(int)
-    label4 = (np.ones(countperclass)*4).astype(int)
-    label5 = (np.ones(countperclass)*5).astype(int)
-    label6 = (np.ones(countperclass)*6).astype(int)
-    label7 = (np.ones(countperclass)*7).astype(int)
-    label8 = (np.ones(countperclass)*8).astype(int)
-    label9 = (np.ones(countperclass)*9).astype(int)
-    y_label = np.concatenate([label0, label1, label2])
-    y_label = np.concatenate([y_label, label3, label4])
-    y_label = np.concatenate([y_label, label5, label6])
-    y_label = np.concatenate([y_label, label7, label8])
-    test_y = np.concatenate([y_label, label9])
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
         for batch in loader_train:
@@ -90,9 +73,11 @@ def main(
             global_step += 1
 
             # decompose batch data
-            img, class_idx = batch
+            img, labels_real = batch
             img = img.to(device)
-            class_idx = class_idx.to(device)
+            labels_real = labels_real.to(device)
+            labels_real_onehot = F.one_hot(labels_real, num_classes=10).float().to(device)
+
             actual_batch_size = img.shape[0]
 
             # reset gradients
@@ -100,32 +85,31 @@ def main(
             G.zero_grad()
 
             # create labels
-            y_real = Variable(torch.ones(batch_size, 1).to(device))
-            y_fake = Variable(torch.zeros(batch_size, 1).to(device))
+            y_real = Variable(torch.ones(actual_batch_size, 1).to(device))
+            y_fake = Variable(torch.zeros(actual_batch_size, 1).to(device))
 
-            z = Variable(torch.randn(batch_size, z_dim).to(device))
-            # create y labels for generator for each class batchsize/10
+            # generate random noise for G
+            z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
 
-            y_gen = (torch.rand(batch_size, 1) *
-                     10).type(torch.LongTensor).squeeze()
-            # convert genarator labels to onehot
-            G_y = onehot[y_gen].to(device)
-            # preprocess labels for feeding as y input in D
-            # DG_y shape will be (batch_size, 10, 28, 28)
-            DG_y = fill[y_gen].to(device)
+            # create class labels for generator - uniform distribution
+            labels_fake = torch.randint(low=0, high=9, size=(actual_batch_size,))
+
+            # one-hot encode class labels
+            labels_fake_onehot = F.one_hot(labels_fake, num_classes=10).float().to(device)
+
             # generate images for D
-            x_fake = G(z, G_y)
+            x_fake = G(z, labels_fake_onehot)
 
             """ 
                 -------
                 train D
                 -------
             """
-            D_out = D(img, DG_y)
-            D_real_loss = criterion(D_out, y_real)
+            D_out_real = D(img, labels_real_onehot)
+            D_real_loss = criterion(D_out_real, y_real)
 
-            D_out = D(x_fake, DG_y)
-            D_fake_loss = criterion(D_out, y_fake)
+            D_out_fake = D(x_fake, labels_fake_onehot)
+            D_fake_loss = criterion(D_out_fake, y_fake)
 
             # gradient backprop & optimize ONLY D's parameters
             D_loss = (D_real_loss + D_fake_loss) / 2.0
@@ -144,11 +128,10 @@ def main(
             # generate images via G
             # create labels for testing generator
             # convert to one hot encoding
-            test_Gy = onehot[test_y].to(device)
             z = Variable(torch.randn(batch_size, z_dim).to(device))
 
-            G_output = G(z, test_Gy)
-            D_out = D(G_output, DG_y)
+            G_output = G(z, labels_fake_onehot)
+            D_out = D(G_output, labels_fake_onehot)
             G_loss = criterion(D_out, y_real)
 
             # gradient backprop & optimize ONLY G's parameters
@@ -163,6 +146,7 @@ def main(
             plot_img = (img + 1.0) / 2.0
             plot_output = (G_output + 1.0) / 2.0
 
+            # print every 50 steps
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
                     'train/disciriminator_loss', D_loss.item(), global_step=global_step)
@@ -174,11 +158,32 @@ def main(
                 tb_writer.flush()
             G_losses.append(G_loss.data.item())
 
-            if global_step % 100 == 0:
+            # print every 250 steps
+            if global_step % 250 == 0:
                 tb_writer.add_image(
                     f"train/img", make_grid(plot_img), global_step=global_step)
                 tb_writer.add_image(
                     f"train/pred", make_grid(plot_output), global_step=global_step)
+
+        """
+            -------------------------------
+            test class generation per epoch
+            -------------------------------
+        """
+        # make prediction - we do not need gradients for that
+        with torch.no_grad():
+            # create random noise for G to generate images
+            z = torch.randn(80, z_dim).to(device)
+            # make prediction - use labels test => structured one-hot encoded labels
+            G_test_output = G(z, labels_test)
+            # normalize images => output of G is tanh so we need to normalize to [0.0, 1.0]
+            G_test_output = (G_test_output + 1.0) / 2.0
+            # save to TensorBoard
+            tb_writer.add_image(
+                f"test/pred", make_grid(G_test_output), global_step=e)
+            # flush cache in case anything is hanging in cache
+            tb_writer.flush()
+            
 
         """
             ------
