@@ -11,8 +11,9 @@ import uuid
 from data_loader import get_dataloader
 from model_dcgan import Discriminator, Generator
 from torchvision.utils import make_grid
-#from model_dcgan import weights_init_normal
+from model_dcgan import weights_init_normal
 from torch.utils.tensorboard import SummaryWriter
+import timm
 
 
 def main(
@@ -35,21 +36,27 @@ def main(
     loader_train, loader_test, mnist_dim = get_dataloader(
         batch_size=batch_size)
 
+    # classifier
+    C = timm.create_model("efficientnet_b0", pretrained=True, num_classes=10, in_chans=1)
+    C.to(device)
+
     # initialize G
     G = Generator(g_input_dim=z_dim)
     G.to(device)
-    # G.apply(weights_init_normal)
+    G.apply(weights_init_normal)
 
     # initialize D
     D = Discriminator()
     D.to(device)
-    # D.apply(weights_init_normal)
+    D.apply(weights_init_normal)
 
     # optimizer
+    C_optimizer = optim.Adam(C.parameters(), lr=lr, betas=(0.5, 0.999))
     G_optimizer = optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
     D_optimizer = optim.Adam(D.parameters(), lr=lr, betas=(0.5, 0.999))
 
     # loss
+    criterion_classification = nn.CrossEntropyLoss()
     criterion = nn.BCELoss()
     global_step = 0
     D_losses, G_losses = [], []
@@ -83,6 +90,7 @@ def main(
             # reset gradients
             D.zero_grad()
             G.zero_grad()
+            C.zero_grad()
 
             # create labels
             y_real = Variable(torch.ones(actual_batch_size, 1).to(device))
@@ -98,7 +106,17 @@ def main(
             labels_fake_onehot = F.one_hot(labels_fake, num_classes=10).float().to(device)
 
             # generate images for D
-            x_fake = G(z, labels_fake_onehot)
+            x_fake, x_fake_logits = G(z, labels_fake_onehot)
+
+            """
+                -------
+                train C
+                -------
+            """
+            C_out = C(img)
+            C_loss = criterion_classification(C_out, labels_real_onehot)
+            C_loss.backward()
+            C_optimizer.step()
 
             """ 
                 -------
@@ -124,15 +142,22 @@ def main(
             # reset gradients
             D.zero_grad()
             G.zero_grad()
+            C.zero_grad()
 
             # generate images via G
             # create labels for testing generator
             # convert to one hot encoding
             z = Variable(torch.randn(batch_size, z_dim).to(device))
 
-            G_output = G(z, labels_fake_onehot)
+            G_output, G_output_logits = G(z, labels_fake_onehot)
             D_out = D(G_output, labels_fake_onehot)
-            G_loss = criterion(D_out, y_real)
+            G_disc_loss = criterion(D_out, y_real)
+
+            # test generated images with classifier
+            C_out = C(G_output)
+            G_classification_loss = criterion_classification(C_out, labels_fake_onehot)
+
+            G_loss = G_disc_loss + G_classification_loss
 
             # gradient backprop & optimize ONLY G's parameters
             G_loss.backward()
@@ -154,7 +179,13 @@ def main(
             D_losses.append(D_loss.data.item())
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
-                    'train/generator_loss', G_loss.item(), global_step=global_step)
+                    'train/C_loss', C_loss.item(), global_step=global_step)
+                tb_writer.add_scalar(
+                    'train/G_loss', G_loss.item(), global_step=global_step)
+                tb_writer.add_scalar(
+                    'train/G_disc_loss', G_disc_loss.item(), global_step=global_step)
+                tb_writer.add_scalar(
+                    'train/G_classification_loss', G_classification_loss.item(), global_step=global_step)
                 tb_writer.flush()
             G_losses.append(G_loss.data.item())
 
@@ -175,7 +206,7 @@ def main(
             # create random noise for G to generate images
             z = torch.randn(80, z_dim).to(device)
             # make prediction - use labels test => structured one-hot encoded labels
-            G_test_output = G(z, labels_test)
+            G_test_output, G_test_output_logits = G(z, labels_test)
             # normalize images => output of G is tanh so we need to normalize to [0.0, 1.0]
             G_test_output = (G_test_output + 1.0) / 2.0
             # save to TensorBoard

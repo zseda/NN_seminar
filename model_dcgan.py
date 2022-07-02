@@ -98,7 +98,14 @@ class Generator(nn.Module):
 
         x = self.block3(x)
 
-        return torch.tanh(self.c4(x))
+        # last layer
+        x = self.c4(x)
+
+        # last activation
+        x_logits = x
+        x = torch.tanh(x_logits)
+
+        return x, x_logits
 
 
 class Discriminator(nn.Module):
