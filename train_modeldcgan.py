@@ -151,7 +151,7 @@ def main(
             # generate images via G
             # create labels for testing generator
             # convert to one hot encoding
-            z = Variable(torch.randn(batch_size, z_dim).to(device))
+            z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
 
             G_output, G_output_logits = G(z, labels_fake_onehot)
             D_out = D(G_output, labels_fake_onehot)
