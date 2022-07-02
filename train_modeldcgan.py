@@ -13,12 +13,13 @@ from model_dcgan import Discriminator, Generator
 from torchvision.utils import make_grid
 from model_dcgan import weights_init_normal
 from torch.utils.tensorboard import SummaryWriter
+from torchinfo import summary
 import timm
 
 
 def main(
     root_path: str = typer.Option('.'),
-    epochs: int = typer.Option(20),
+    epochs: int = typer.Option(50),
     batch_size: int = typer.Option(100),
     lr: float = typer.Option(1e-4),
     z_dim: int = typer.Option(100),
@@ -38,15 +39,18 @@ def main(
 
     # classifier
     C = timm.create_model("efficientnet_b0", pretrained=True, num_classes=10, in_chans=1)
+    summary(C)
     C.to(device)
 
     # initialize G
     G = Generator(g_input_dim=z_dim)
+    summary(G)
     G.to(device)
     G.apply(weights_init_normal)
 
     # initialize D
     D = Discriminator()
+    summary(D)
     D.to(device)
     D.apply(weights_init_normal)
 

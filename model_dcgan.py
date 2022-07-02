@@ -11,19 +11,22 @@ def weights_init_normal(m):
         logger.debug(f"init conv weights '{classname}'")
         nn.init.xavier_normal_(m.weight)
         nn.init.constant_(m.bias.data, 0.0)
-    elif classname.find('BatchNorm2d') != -1:
-        logger.debug(f"init batchnorm weights '{classname}'")
+    elif classname.find('Linear') != -1:
+        logger.debug(f"init linear weights '{classname}'")
+        nn.init.xavier_normal_(m.weight)
+        nn.init.constant_(m.bias.data, 0.0)
+    elif classname.find('InstanceNorm') != -1:
+        logger.debug(f"init batchnorm 2d weights '{classname}'")
         nn.init.constant_(m.weight, 1.0)
         nn.init.constant_(m.bias.data, 0.0)
-
-
-def weight_init(self, layer):
-    if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.ConvTranspose2d):
-        nn.init.xavier_normal_(layer.weight)
-        nn.init.constant_(layer.bias.data, 0.0)
-    elif isinstance(layer, nn.BatchNorm2d):
-        nn.init.constant_(layer.weight, 1.0)
-        nn.init.constant_(layer.bias.data, 0.0)
+    elif classname.find('BatchNorm2d') != -1:
+        logger.debug(f"init batchnorm 2d weights '{classname}'")
+        nn.init.constant_(m.weight, 1.0)
+        nn.init.constant_(m.bias.data, 0.0)
+    elif classname.find('BatchNorm1d') != -1:
+        logger.debug(f"init batchnorm 1d weights '{classname}'")
+        nn.init.constant_(m.weight, 1.0)
+        nn.init.constant_(m.bias.data, 0.0)
 
 
 class Block(nn.Module):
@@ -65,29 +68,32 @@ class Generator(nn.Module):
     def __init__(self, g_input_dim):
         super(Generator, self).__init__()
         self.fc1 = nn.Linear(in_features=g_input_dim, out_features=7*7*32)
+        # self.fc1b = nn.BatchNorm1d(num_features=7*7*32)
         self.fc2 = nn.Linear(in_features=10, out_features=7*7*32)
+        # self.fc2b = nn.BatchNorm1d(num_features=7*7*32)
+        self.fc3 = nn.Linear(in_features=7*7*64, out_features=7*7*32)
+        # self.fc3b = nn.BatchNorm1d(num_features=7*7*32)
 
-        self.block1 = Block(in_channels=64)
-        self.block2 = Block(in_channels=64)
-        self.block3 = Block(in_channels=64)
-        self.c4 = nn.Conv2d(in_channels=64, out_channels=1,
+        self.block1 = Block(in_channels=32)
+        self.block2 = Block(in_channels=32)
+        self.block3 = Block(in_channels=32)
+
+        self.c4 = nn.Conv2d(in_channels=32, out_channels=1,
                             kernel_size=3, stride=1, padding="same")
 
     def forward(self, x, label):
+        # process random noise
+        fc1 = F.leaky_relu(self.fc1(x), 0.2)
 
-        x = F.leaky_relu(self.fc1(x), 0.2)
+        # process class information
+        fc2 = F.leaky_relu(self.fc2(label), 0.2)
+
+        # concat data
+        fc_concat = torch.cat((fc1, fc2), dim=1)
+        fc3 = F.leaky_relu(self.fc3(fc_concat))
 
         # transform to 2D space
-        x = x.view(-1, 32, 7, 7)
-
-        # y size : (batch_size, 10)
-        y = F.leaky_relu(self.fc2(label), 0.2)
-        # transform to 2D space
-        y = y.view(-1, 32, 7, 7)
-
-        # concat x and y
-        x = torch.cat([x, y], dim=1)
-        # xy size : (batch_size, 128, 7, 7)
+        x = fc3.view(-1, 32, 7, 7)
 
         # apply convolutions and upsample
         x = self.block1(x)
