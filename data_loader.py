@@ -2,7 +2,7 @@ import torch
 from torchvision import transforms, datasets
 
 
-def get_dataloader(batch_size: int):
+def get_dataloader(batch_size: int, num_workers: int):
     # MNIST Dataset
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -15,7 +15,7 @@ def get_dataloader(batch_size: int):
 
     # Data Loader (Input Pipeline)
     train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset, batch_size=batch_size, shuffle=True)
+        dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     test_loader = torch.utils.data.DataLoader(
         dataset=test_dataset, batch_size=batch_size, shuffle=False)
     mnist_dim = train_dataset.train_data.size(

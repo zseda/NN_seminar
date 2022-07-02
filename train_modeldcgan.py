@@ -23,6 +23,7 @@ def main(
     batch_size: int = typer.Option(100),
     lr: float = typer.Option(1e-4),
     z_dim: int = typer.Option(100),
+    num_workers: int = typer.Option(16),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
 
 ):
@@ -34,8 +35,7 @@ def main(
     logger.info(f"experiment id: {experiment_id}")
 
     # load data
-    loader_train, loader_test, mnist_dim = get_dataloader(
-        batch_size=batch_size)
+    loader_train, loader_test, mnist_dim = get_dataloader(batch_size=batch_size, num_workers=num_workers)
 
     # classifier
     # C = timm.create_model("efficientnet_b0", pretrained=True, num_classes=10, in_chans=1)
