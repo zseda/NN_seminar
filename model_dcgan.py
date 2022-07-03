@@ -9,15 +9,15 @@ def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
         logger.debug(f"init conv weights '{classname}'")
-        # nn.init.xavier_normal_(m.weight)
+        nn.init.xavier_normal_(m.weight)
         # nn.init.kaiming_uniform_(m.weight, mode="fan_out")
-        nn.init.kaiming_normal_(m.weight, mode="fan_out")
+        # nn.init.kaiming_normal_(m.weight, mode="fan_out")
         nn.init.constant_(m.bias.data, 0.0)
     elif classname.find('Linear') != -1:
         logger.debug(f"init linear weights '{classname}'")
-        # nn.init.xavier_normal_(m.weight)
+        nn.init.xavier_normal_(m.weight)
         # nn.init.kaiming_uniform_(m.weight, mode="fan_out")
-        nn.init.kaiming_normal_(m.weight, mode="fan_out")
+        # nn.init.kaiming_normal_(m.weight, mode="fan_out")
         nn.init.constant_(m.bias.data, 0.0)
     elif classname.find('BatchNorm2d') != -1:
         logger.debug(f"init batchnorm 2d weights '{classname}'")
@@ -118,33 +118,55 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, norm, weight_norm, activation):
         super(Discriminator, self).__init__()
-        # creating layer for label input, input size : (batch_size, 10)
-        self.layer_label = nn.Sequential(nn.Linear(in_features=10, out_features=100),
-                                         # out size : (batch_size, 32, 14, 14)
-                                         nn.LeakyReLU(0.2, inplace=True),
-                                         # out size : (batch_size, 32, 14, 14)
-                                         )
 
-        self.c1 = nn.Conv2d(in_channels=1, out_channels=64,
-                            kernel_size=3, stride=2, padding=1)
-        self.b1 = nn.BatchNorm2d(num_features=64)
+        self.step1 = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=64,
+                                kernel_size=3, stride=2, padding=1),
+            weight_norm(),
+            norm(num_features=64),
+            activation()
+        )
 
-        self.c2 = nn.Conv2d(in_channels=64, out_channels=128,
-                            kernel_size=3, stride=2, padding=1)
-        self.b2 = nn.BatchNorm2d(num_features=128)
+        self.step2 = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=128,
+                                kernel_size=3, stride=2, padding=1),
+            weight_norm(),
+            norm(num_features=128),
+            activation()
+        )
 
-        self.c3 = nn.Conv2d(in_channels=128, out_channels=256,
-                            kernel_size=3, stride=1, padding="same")
-        self.b3 = nn.BatchNorm2d(num_features=256)
+        self.step3 = nn.Sequential(
+            nn.Conv2d(in_channels=128, out_channels=256,
+                                kernel_size=3, stride=2, padding=1),
+            weight_norm(),
+            norm(num_features=256),
+            activation()
+        )
 
-        self.c4 = nn.Conv2d(in_channels=256, out_channels=128,
-                            kernel_size=3, stride=1, padding="same")
-        self.b4 = nn.BatchNorm2d(num_features=128)
+        self.step4 = nn.Sequential(
+            nn.Conv2d(in_channels=256, out_channels=128,
+                                kernel_size=3, stride=2, padding=1),
+            weight_norm(),
+            norm(num_features=128),
+            activation()
+        )
+
+        self.layer_label = nn.Sequential(
+            nn.Linear(in_features=10, out_features=100),
+            weight_norm(),
+            norm(num_features=100),
+            activation()
+        )
 
         self.fc_num_features = 128*7*7
-        self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=100)
+        self.fc1 = nn.Sequential(
+            nn.Linear(in_features=self.fc_num_features, out_features=100),
+            weight_norm(),
+            norm(num_features=100),
+            activation()
+        )
         self.fc2 = nn.Linear(in_features=200, out_features=1)
 
     def forward(self, x, label):
@@ -158,27 +180,10 @@ class Discriminator(nn.Module):
         Returns:
             float: prediction in interval [0, 1]
         """
-        # x => [N, 1, 28, 28]
-
-        x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
-        # x = F.leaky_relu(self.c1(x), 0.2)
-        # x => [N, 32, 14, 14]
-        x = F.dropout(x, 0.3)
-
-        x = F.leaky_relu(self.b2(self.c2(x)), 0.2)
-        # x = F.leaky_relu(self.c2(x), 0.2)
-        # x => [N, 128, 7, 7]
-        x = F.dropout(x, 0.3)
-
-        x = F.leaky_relu(self.b3(self.c3(x)), 0.2)
-        # x = F.leaky_relu(self.c3(x), 0.2)
-        # x => [N, 256, 7, 7]
-        x = F.dropout(x, 0.3)
-
-        x = F.leaky_relu(self.b4(self.c4(x)), 0.2)
-        # x = F.leaky_relu(self.c4(x), 0.2)
-        x = F.dropout(x, 0.3)
-        # x => [N, 128, 7, 7]
+        x = self.step1(x)
+        x = self.step2(x)
+        x = self.step3(x)
+        x = self.step4(x)
 
         # change shape for fc layers
         x = x.view(-1, self.fc_num_features)
@@ -186,7 +191,6 @@ class Discriminator(nn.Module):
 
         # process image information
         x = self.fc1(x)
-        x = F.leaky_relu(x)
 
         # process label information
         label = self.layer_label(label)
