@@ -45,11 +45,11 @@ def main(
             # one-hot encode class labels
             labels_test_onehot = F.one_hot(
                 labels_test, num_classes=10).float().to(device)
-            generated_samples, G_test_output_logits = full_gan(
+            G_out, G_out_logits = full_gan(
                 z, labels_test_onehot)
-            for im, lbl in generated_samples:
+            generated_samples = (G_out + 1)/2
+            for im in generated_samples:
                 im = to_pil(im)
-                lbl =
                 im.save(Path(path_full_gan_predictions,
                              f"prediction-{i}.png").as_posix())
 
