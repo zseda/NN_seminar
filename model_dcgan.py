@@ -122,48 +122,42 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.step1 = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64,
-                                kernel_size=3, stride=2, padding=1),
-            weight_norm(),
+            weight_norm(nn.Conv2d(in_channels=1, out_channels=64,
+                                kernel_size=3, stride=2, padding=1)),
             norm(num_features=64),
             activation()
         )
 
         self.step2 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=128,
-                                kernel_size=3, stride=2, padding=1),
-            weight_norm(),
+            weight_norm(nn.Conv2d(in_channels=64, out_channels=128,
+                                kernel_size=3, stride=2, padding=1)),
             norm(num_features=128),
             activation()
         )
 
         self.step3 = nn.Sequential(
-            nn.Conv2d(in_channels=128, out_channels=256,
-                                kernel_size=3, stride=2, padding=1),
-            weight_norm(),
+            weight_norm(nn.Conv2d(in_channels=128, out_channels=256,
+                                kernel_size=3, stride=2, padding=1)),
             norm(num_features=256),
             activation()
         )
 
         self.step4 = nn.Sequential(
-            nn.Conv2d(in_channels=256, out_channels=128,
-                                kernel_size=3, stride=2, padding=1),
-            weight_norm(),
+            weight_norm(nn.Conv2d(in_channels=256, out_channels=128,
+                                kernel_size=3, stride=2, padding=1)),
             norm(num_features=128),
             activation()
         )
 
         self.layer_label = nn.Sequential(
-            nn.Linear(in_features=10, out_features=100),
-            weight_norm(),
+            weight_norm(nn.Linear(in_features=10, out_features=100)),
             norm(num_features=100),
             activation()
         )
 
         self.fc_num_features = 128*7*7
         self.fc1 = nn.Sequential(
-            nn.Linear(in_features=self.fc_num_features, out_features=100),
-            weight_norm(),
+            weight_norm(nn.Linear(in_features=self.fc_num_features, out_features=100)),
             norm(num_features=100),
             activation()
         )
