@@ -9,15 +9,15 @@ def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
         logger.debug(f"init conv weights '{classname}'")
-        nn.init.xavier_normal_(m.weight)
+        # nn.init.xavier_normal_(m.weight)
         # nn.init.kaiming_uniform_(m.weight)
-        # nn.init.kaiming_normal_(m.weight)
+        nn.init.kaiming_normal_(m.weight)
         nn.init.constant_(m.bias.data, 0.0)
     elif classname.find('Linear') != -1:
         logger.debug(f"init linear weights '{classname}'")
-        nn.init.xavier_normal_(m.weight)
+        # nn.init.xavier_normal_(m.weight)
         # nn.init.kaiming_uniform_(m.weight)
-        # nn.init.kaiming_normal_(m.weight)
+        nn.init.kaiming_normal_(m.weight)
         nn.init.constant_(m.bias.data, 0.0)
     elif classname.find('BatchNorm2d') != -1:
         logger.debug(f"init batchnorm 2d weights '{classname}'")
