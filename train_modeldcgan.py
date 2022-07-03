@@ -1,3 +1,4 @@
+import loguru
 import typer
 import torch
 import torch.nn as nn
@@ -133,10 +134,10 @@ def main(
                 -------
             """
             # D_out_real = D(img, labels_real_onehot)
-            D_out_real = D(img)
+            D_out_real = D(img, labels_real_onehot)
             D_real_loss = criterion(D_out_real, y_real)
 
-            D_out_fake = D(x_fake)
+            D_out_fake = D(x_fake, labels_fake_onehot)
             D_fake_loss = criterion(D_out_fake, y_fake)
 
             # gradient backprop & optimize ONLY D's parameters
@@ -160,7 +161,7 @@ def main(
             z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
 
             G_output, G_output_logits = G(z, labels_fake_onehot)
-            D_out = D(G_output)
+            D_out = D(G_output, labels_fake_onehot)
             G_disc_loss = criterion(D_out, y_real)
 
             # test generated images with classifier

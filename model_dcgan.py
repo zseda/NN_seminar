@@ -121,11 +121,11 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         # creating layer for label input, input size : (batch_size, 10)
-        # self.layer_label = nn.Sequential(nn.Linear(in_features=10, out_features=100),
-        #                                  # out size : (batch_size, 32, 14, 14)
-        #                                  nn.LeakyReLU(0.2, inplace=True),
-        #                                  # out size : (batch_size, 32, 14, 14)
-        #                                  )
+        self.layer_label = nn.Sequential(nn.Linear(in_features=10, out_features=100),
+                                         # out size : (batch_size, 32, 14, 14)
+                                         nn.LeakyReLU(0.2, inplace=True),
+                                         # out size : (batch_size, 32, 14, 14)
+                                         )
 
         self.c1 = nn.Conv2d(in_channels=1, out_channels=64,
                             kernel_size=3, stride=2, padding=1)
@@ -145,10 +145,10 @@ class Discriminator(nn.Module):
 
         self.fc_num_features = 128*7*7
         self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=100)
-        self.fc2 = nn.Linear(in_features=100, out_features=1)
+        self.fc2 = nn.Linear(in_features=200, out_features=1)
 
-    # def forward(self, x, label):
-    def forward(self, x):
+    def forward(self, x, label):
+    # def forward(self, x):
         """forward method
 
         Args:
@@ -189,10 +189,10 @@ class Discriminator(nn.Module):
         x = F.leaky_relu(x)
 
         # process label information
-        # label = self.layer_label(label)
+        label = self.layer_label(label)
 
         # concat image + label information
-        # x = torch.cat((x, label), dim=1)
+        x = torch.cat((x, label), dim=1)
         
         # process both
         x = self.fc2(x)
