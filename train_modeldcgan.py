@@ -23,6 +23,7 @@ def main(
     batch_size: int = typer.Option(100),
     lr: float = typer.Option(1e-4),
     z_dim: int = typer.Option(100),
+    start_c_after: int = typer.Option(15),
     num_workers: int = typer.Option(16),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
 
@@ -158,7 +159,7 @@ def main(
             G_disc_loss = criterion(D_out, y_real)
 
             # test generated images with classifier
-            if e > 6:
+            if e > start_c_after:
                 C_out = C(G_output)
                 G_classification_loss = criterion_classification(C_out, labels_fake_onehot)
                 G_loss = G_disc_loss + 0.3*G_classification_loss
@@ -190,7 +191,7 @@ def main(
                     'train/G_loss', G_loss.item(), global_step=global_step)
                 tb_writer.add_scalar(
                     'train/G_disc_loss', G_disc_loss.item(), global_step=global_step)
-                if e > 5:
+                if e > start_c_after:
                     tb_writer.add_scalar(
                         'train/G_classification_loss', G_classification_loss.item(), global_step=global_step)
                 tb_writer.flush()
@@ -229,12 +230,12 @@ def main(
             ------
         """
         # save D
-        if e % 1 == 0:
+        if e % 5 == 0:
             torch.save(D.state_dict(), Path(root_path, "logs",
                                             experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
 
         # save G
-        if e % 1 == 0:
+        if e % 5 == 0:
             torch.save(G.state_dict(), Path(root_path, "logs",
                                             experiment_id, f"model_epoch_G{e:0>3}.pth").as_posix())
 
