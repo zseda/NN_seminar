@@ -137,14 +137,14 @@ class Discriminator(nn.Module):
 
         self.step3 = nn.Sequential(
             weight_norm(nn.Conv2d(in_channels=128, out_channels=256,
-                                kernel_size=3, stride=2, padding=1)),
+                                kernel_size=3, stride=1, padding=1)),
             norm(num_features=256),
             activation()
         )
 
         self.step4 = nn.Sequential(
             weight_norm(nn.Conv2d(in_channels=256, out_channels=128,
-                                kernel_size=3, stride=2, padding=1)),
+                                kernel_size=3, stride=1, padding=1)),
             norm(num_features=128),
             activation()
         )
