@@ -34,29 +34,29 @@ class Block(nn.Module):
         super().__init__()
         self.c1 = nn.Conv2d(in_channels=in_channels, out_channels=int(in_channels/2),
                             kernel_size=3, stride=1, padding="same")
-        self.b1 = nn.BatchNorm2d(num_features=int(in_channels/2))
+        # self.b1 = nn.BatchNorm2d(num_features=int(in_channels/2))
 
         self.c2 = nn.Conv2d(in_channels=int(in_channels/2), out_channels=int(in_channels/2),
                             kernel_size=3, stride=1, padding="same")
-        self.b2 = nn.BatchNorm2d(num_features=int(in_channels/2))
+        # self.b2 = nn.BatchNorm2d(num_features=int(in_channels/2))
 
         self.c3 = nn.Conv2d(in_channels=int(in_channels/2), out_channels=in_channels,
                             kernel_size=3, stride=1, padding="same")
-        self.b3 = nn.BatchNorm2d(num_features=in_channels)
+        # self.b3 = nn.BatchNorm2d(num_features=in_channels)
 
     def forward(self, x):
         features_in = x
 
         x = self.c1(x)
-        x = self.b1(x)
+        # x = self.b1(x)
         x = F.leaky_relu(x)
 
         x = self.c2(x)
-        x = self.b2(x)
+        # x = self.b2(x)
         x = F.leaky_relu(x)
 
         x = self.c3(x)
-        x = self.b3(x)
+        # x = self.b3(x)
         x = F.leaky_relu(x)
 
         x = features_in + x
@@ -129,19 +129,19 @@ class Discriminator(nn.Module):
 
         self.c1 = nn.Conv2d(in_channels=1, out_channels=64,
                             kernel_size=3, stride=2, padding=1)
-        self.b1 = nn.BatchNorm2d(num_features=64)
+        # self.b1 = nn.BatchNorm2d(num_features=64)
 
         self.c2 = nn.Conv2d(in_channels=64, out_channels=128,
                             kernel_size=3, stride=2, padding=1)
-        self.b2 = nn.BatchNorm2d(num_features=128)
+        # self.b2 = nn.BatchNorm2d(num_features=128)
 
         self.c3 = nn.Conv2d(in_channels=128, out_channels=256,
                             kernel_size=3, stride=1, padding="same")
-        self.b3 = nn.BatchNorm2d(num_features=256)
+        # self.b3 = nn.BatchNorm2d(num_features=256)
 
         self.c4 = nn.Conv2d(in_channels=256, out_channels=128,
                             kernel_size=3, stride=1, padding="same")
-        self.b4 = nn.BatchNorm2d(num_features=128)
+        # self.b4 = nn.BatchNorm2d(num_features=128)
 
         self.fc_num_features = 128*7*7
         self.fc1 = nn.Linear(in_features=self.fc_num_features, out_features=100)
@@ -159,19 +159,23 @@ class Discriminator(nn.Module):
         """
         # x => [N, 1, 28, 28]
 
-        x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
+        # x = F.leaky_relu(self.b1(self.c1(x)), 0.2)
+        x = F.leaky_relu(self.c1(x), 0.2)
         # x => [N, 32, 14, 14]
         x = F.dropout(x, 0.3)
 
-        x = F.leaky_relu(self.b2(self.c2(x)), 0.2)
+        # x = F.leaky_relu(self.b2(self.c2(x)), 0.2)
+        x = F.leaky_relu(self.c2(x), 0.2)
         # x => [N, 128, 7, 7]
         x = F.dropout(x, 0.3)
 
-        x = F.leaky_relu(self.b3(self.c3(x)), 0.2)
+        # x = F.leaky_relu(self.b3(self.c3(x)), 0.2)
+        x = F.leaky_relu(self.c3(x), 0.2)
         # x => [N, 256, 7, 7]
         x = F.dropout(x, 0.3)
 
-        x = F.leaky_relu(self.b4(self.c4(x)), 0.2)
+        # x = F.leaky_relu(self.b4(self.c4(x)), 0.2)
+        x = F.leaky_relu(self.c4(x), 0.2)
         x = F.dropout(x, 0.3)
         # x => [N, 128, 7, 7]
 
