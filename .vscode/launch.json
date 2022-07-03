@@ -8,7 +8,7 @@
             "name": "Train",
             "type": "python",
             "request": "launch",
-            "program": "train_modeldcgan.py",
+            "program": "test_gan.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }
