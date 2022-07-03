@@ -73,6 +73,10 @@ def main(
         labels_test.append(eye10[i].repeat(8).view(8, 10))
     labels_test = torch.stack(labels_test).view(-1, 10).float().to(device)
 
+    # persistent z for testing
+    torch.manual_seed(42)
+    z_permanent = torch.randn(80, z_dim).to(device)
+
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
         for batch in loader_train:
@@ -217,10 +221,21 @@ def main(
             # make prediction - use labels test => structured one-hot encoded labels
             G_test_output, G_test_output_logits = G(z, labels_test)
             # normalize images => output of G is tanh so we need to normalize to [0.0, 1.0]
-            G_test_output = (G_test_output + 1.0) / 2.0
+            G_test_output = (G_test_output + 1.0) / 2.0            
             # save to TensorBoard
             tb_writer.add_image(
                 f"test/pred", make_grid(G_test_output), global_step=e)
+            # flush cache in case anything is hanging in cache
+            tb_writer.flush()
+
+        # make prediction of z_permanent - same random numbers for all epochs
+            # make prediction - use labels test => structured one-hot encoded labels
+            G_test_output_perm, G_test_output_logits = G(z_permanent, labels_test)
+            # normalize images => output of G is tanh so we need to normalize to [0.0, 1.0]
+            G_test_output_perm = (G_test_output_perm + 1.0) / 2.0            
+            # save to TensorBoard
+            tb_writer.add_image(
+                f"test/pred_perm", make_grid(G_test_output_perm), global_step=e)
             # flush cache in case anything is hanging in cache
             tb_writer.flush()
             
