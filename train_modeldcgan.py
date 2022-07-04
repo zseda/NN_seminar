@@ -28,7 +28,7 @@ def main(
     num_workers: int = typer.Option(16),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
     # %80=48.000 %60=36.000 %40 =24.000 %20 = 12.000
-    dataset_size: int = typer.Option(60000)
+    dataset_size: int = typer.Option(48000)
 
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
