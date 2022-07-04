@@ -27,6 +27,7 @@ def main(
     start_c_after: int = typer.Option(15),
     num_workers: int = typer.Option(16),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
+    dataset_size: int = typer.Option(48000)
 
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -37,10 +38,12 @@ def main(
     logger.info(f"experiment id: {experiment_id}")
 
     # load data
-    loader_train, loader_test, mnist_dim = get_dataloader(batch_size=batch_size, num_workers=num_workers)
+    loader_train, part_train, loader_test, mnist_dim = get_dataloader(
+        batch_size=batch_size, num_workers=num_workers, dataset_size=dataset_size)
 
     # classifier
-    C = timm.create_model("efficientnet_b0", pretrained=True, num_classes=10, in_chans=1)
+    C = timm.create_model("efficientnet_b0", pretrained=True,
+                          num_classes=10, in_chans=1)
     summary(C)
     C.to(device)
 
@@ -52,15 +55,16 @@ def main(
 
     # config D - weight norm
     D_weight_norm = nn.utils.spectral_norm
-    
+
     # config D - norm
     D_norm = nn.Identity
 
     # config D - activation
     D_activation = nn.LeakyReLU
 
-    # initialize D    
-    D = Discriminator(norm=D_norm, weight_norm=D_weight_norm, activation=D_activation)
+    # initialize D
+    D = Discriminator(norm=D_norm, weight_norm=D_weight_norm,
+                      activation=D_activation)
     summary(D)
     D.to(device)
     D.apply(weights_init_normal)
@@ -102,7 +106,8 @@ def main(
             img, labels_real = batch
             img = img.to(device)
             labels_real = labels_real.to(device)
-            labels_real_onehot = F.one_hot(labels_real, num_classes=10).float().to(device)
+            labels_real_onehot = F.one_hot(
+                labels_real, num_classes=10).float().to(device)
 
             actual_batch_size = img.shape[0]
 
@@ -119,10 +124,12 @@ def main(
             z = Variable(torch.randn(actual_batch_size, z_dim).to(device))
 
             # create class labels for generator - uniform distribution
-            labels_fake = torch.randint(low=0, high=9, size=(actual_batch_size,))
+            labels_fake = torch.randint(
+                low=0, high=9, size=(actual_batch_size,))
 
             # one-hot encode class labels
-            labels_fake_onehot = F.one_hot(labels_fake, num_classes=10).float().to(device)
+            labels_fake_onehot = F.one_hot(
+                labels_fake, num_classes=10).float().to(device)
 
             # generate images for D
             x_fake, x_fake_logits = G(z, labels_fake_onehot)
@@ -176,7 +183,8 @@ def main(
             # test generated images with classifier
             if e > start_c_after:
                 C_out = C(G_output)
-                G_classification_loss = criterion_classification(C_out, labels_fake_onehot)
+                G_classification_loss = criterion_classification(
+                    C_out, labels_fake_onehot)
                 G_loss = G_disc_loss + 0.3*G_classification_loss
             else:
                 G_loss = G_disc_loss
@@ -201,7 +209,7 @@ def main(
             D_losses.append(D_loss.data.item())
             if global_step % 50 == 0:
                 # tb_writer.add_scalar(
-                    # 'train/C_loss', C_loss.item(), global_step=global_step)
+                # 'train/C_loss', C_loss.item(), global_step=global_step)
                 tb_writer.add_scalar(
                     'train/G_loss', G_loss.item(), global_step=global_step)
                 tb_writer.add_scalar(
@@ -231,7 +239,7 @@ def main(
             # make prediction - use labels test => structured one-hot encoded labels
             G_test_output, G_test_output_logits = G(z, labels_test)
             # normalize images => output of G is tanh so we need to normalize to [0.0, 1.0]
-            G_test_output = (G_test_output + 1.0) / 2.0            
+            G_test_output = (G_test_output + 1.0) / 2.0
             # save to TensorBoard
             tb_writer.add_image(
                 f"test/pred", make_grid(G_test_output), global_step=e)
@@ -240,15 +248,15 @@ def main(
 
         # make prediction of z_permanent - same random numbers for all epochs
             # make prediction - use labels test => structured one-hot encoded labels
-            G_test_output_perm, G_test_output_logits = G(z_permanent, labels_test)
+            G_test_output_perm, G_test_output_logits = G(
+                z_permanent, labels_test)
             # normalize images => output of G is tanh so we need to normalize to [0.0, 1.0]
-            G_test_output_perm = (G_test_output_perm + 1.0) / 2.0            
+            G_test_output_perm = (G_test_output_perm + 1.0) / 2.0
             # save to TensorBoard
             tb_writer.add_image(
                 f"test/pred_perm", make_grid(G_test_output_perm), global_step=e)
             # flush cache in case anything is hanging in cache
             tb_writer.flush()
-            
 
         """
             ------

@@ -2,7 +2,7 @@ import torch
 from torchvision import transforms, datasets
 
 
-def get_dataloader(batch_size: int, num_workers: int):
+def get_dataloader(batch_size: int, num_workers: int, dataset_size: int):
     # MNIST Dataset
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -12,6 +12,9 @@ def get_dataloader(batch_size: int, num_workers: int):
         root='./fashion_mnist_data/', train=True, transform=transform, download=True)
     test_dataset = datasets.FashionMNIST(
         root='./fashion_mnist_data/', train=False, transform=transform, download=False)
+    # get partial dataset for different generators
+    part_train_dataset = torch.utils.data.random_split(
+        train_dataset, [dataset_size, len(train_dataset)-dataset_size], generator=torch.Generator().manual_seed(42))[0]
 
     # Data Loader (Input Pipeline)
     train_loader = torch.utils.data.DataLoader(
@@ -20,4 +23,4 @@ def get_dataloader(batch_size: int, num_workers: int):
         dataset=test_dataset, batch_size=batch_size, shuffle=False)
     mnist_dim = train_dataset.train_data.size(
         1) * train_dataset.train_data.size(2)
-    return train_loader, test_loader, mnist_dim
+    return train_loader, part_train_dataset, test_loader, mnist_dim
