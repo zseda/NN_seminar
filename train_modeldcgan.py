@@ -27,7 +27,8 @@ def main(
     start_c_after: int = typer.Option(15),
     num_workers: int = typer.Option(16),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
-    dataset_size: int = typer.Option(48000)
+    # %80=48.000 %60=36.000 %40 =24.000 %20 = 12.000
+    dataset_size: int = typer.Option(60000)
 
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -93,7 +94,7 @@ def main(
 
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
-        for batch in loader_train:
+        for batch in part_train:
             """
                 -----------
                 preparation
