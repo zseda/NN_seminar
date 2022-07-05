@@ -39,7 +39,7 @@ def main(
     logger.info(f"experiment id: {experiment_id}")
 
     # load data
-    loader_train, part_train, loader_test, mnist_dim = get_dataloader(
+    loader_train, loader_test, mnist_dim = get_dataloader(
         batch_size=batch_size, num_workers=num_workers, dataset_size=dataset_size)
 
     # classifier
@@ -94,7 +94,7 @@ def main(
 
     for e in range(1, epochs+1):
         logger.info(f"training epoch {e}/{epochs}")
-        for batch in part_train:
+        for batch in loader_train:
             """
                 -----------
                 preparation

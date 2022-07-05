@@ -18,9 +18,9 @@ def get_dataloader(batch_size: int, num_workers: int, dataset_size: int):
 
     # Data Loader (Input Pipeline)
     train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+        dataset=part_train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     test_loader = torch.utils.data.DataLoader(
         dataset=test_dataset, batch_size=batch_size, shuffle=False)
     mnist_dim = train_dataset.train_data.size(
         1) * train_dataset.train_data.size(2)
-    return train_loader, part_train_dataset, test_loader, mnist_dim
+    return train_loader, test_loader, mnist_dim
