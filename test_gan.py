@@ -86,15 +86,19 @@ def main(
                 z = Variable(torch.randn(
                     int(batch_size/one_hot_labels.size(dim=0))), z_dim).to(device)
                 # dublicate label batchsize/one_hot_labels_size
+                # every label directory has same amount of image
                 label = label.repeat(
                     int(batch_size/one_hot_labels.size(dim=0))).view(int(batch_size/one_hot_labels.size(dim=0)), 10)
+                # generate images
                 G_out, G_out_logits = gan(
                     z, label)
                 generated_samples = (G_out + 1)/2
+                # create label directories
                 label_dir = Path.joinpath(
                     path_gan_predictions, Path("./label{l}"))
                 label_dir.mkdir(parents=True, exist_ok=True)
                 l = l+1
+                # save every generated images to corresponding directory
                 for im in generated_samples:
                     im = to_pil(im)
                     im.save(Path(path_gan_predictions,
