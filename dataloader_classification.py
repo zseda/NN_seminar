@@ -24,16 +24,16 @@ class DatasetType(str, Enum):
 
 
 class labels_dir(str, Enum):
-    Tshirt_Top = "/label_0"
-    Trouser = "/label_1"
-    Pullover = "/label_2"
-    Dress = "l/abel_3"
-    Coat = "/label_4"
-    Sandal = "/label_5"
-    Shirt = "/label_6"
-    Sneaker = "/label_7"
-    Bag = "/label_8"
-    Ankle_boot = "/label_9"
+    Tshirt_Top = "label_0"
+    Trouser = "label_1"
+    Pullover = "label_2"
+    Dress = "label_3"
+    Coat = "label_4"
+    Sandal = "label_5"
+    Shirt = "label_6"
+    Sneaker = "label_7"
+    Bag = "label_8"
+    Ankle_boot = "label_9"
 
 
 @dataclass
@@ -72,8 +72,11 @@ def main(
     img_size: int = typer.Option(28)
 
 ):
+
     logger.info(f"experiment id: {experiment_id}")
+    data_path = SPECS[dataset_type].data_path
     logger.info(f"dataset_type: {dataset_type}")
+
     logger.info(f"image size: {img_size} * {img_size}")
 
     images = []
@@ -86,25 +89,24 @@ def main(
         for img in tqdm(os.listdir(DIR)):
             label = assign_label(img, label)
             path = os.path.join(DIR, img)
-            img = cv2.imread(path, cv2.IMREAD_COLOR)
-            img = cv2.resize(img, (img_size, img_size))
+            img = cv2.imread(path)
 
             images.append(np.array(img))
             labels.append(str(label))
 
-    make_train_data('0', labels_dir.Tshirt_Top)
-    make_train_data('1', labels_dir.Trouser)
-    make_train_data('2', labels_dir.Pullover)
-    make_train_data('3', labels_dir.Dress)
-    make_train_data('4', labels_dir.Coat)
-    make_train_data('5', labels_dir.Sandal)
-    make_train_data('6', labels_dir.Shirt)
-    make_train_data('7', labels_dir.Sneaker)
-    make_train_data('8', labels_dir.Bag)
-    make_train_data('9', labels_dir.Ankle_boot)
+    make_train_data('0', Path(data_path, "label_0"))
+    make_train_data('1', Path(data_path, "label_1"))
+    make_train_data('2', Path(data_path, "label_2"))
+    make_train_data('3', Path(data_path, "label_3"))
+    make_train_data('4', Path(data_path, "label_4"))
+    make_train_data('5', Path(data_path, "label_5"))
+    make_train_data('6', Path(data_path, "label_6"))
+    make_train_data('7', Path(data_path, "label_7"))
+    make_train_data('8', Path(data_path, "label_8"))
+    make_train_data('9', Path(data_path, "label_9"))
 
-    labels = torch.from_numpy(labels)
-    onehot_labels = F.one_hot(labels, num_classes=10)
+    #labels = torch.from_numpy(labels)
+    #onehot_labels = F.one_hot(labels, num_classes=10)
 
     # USE A LABELENCODER IF YOU WANT HERE
 
