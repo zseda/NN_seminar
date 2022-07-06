@@ -9,7 +9,7 @@ from torch.autograd import Variable
 from loguru import logger
 from pathlib import Path
 import uuid
-from data_loader_gan import get_dataloader
+from dataloader_real import get_dataloader
 from model_dcgan import Discriminator, Generator
 from torchvision.utils import make_grid
 from model_dcgan import weights_init_normal
