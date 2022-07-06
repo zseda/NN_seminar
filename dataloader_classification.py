@@ -87,10 +87,8 @@ def main(
 
     def make_train_data(label, DIR):
         for img in tqdm(os.listdir(DIR)):
-            label = assign_label(img, label)
             path = os.path.join(DIR, img)
-            img = cv2.imread(path)
-
+            img = cv2.imread(path, 0)
             images.append(np.array(img))
             labels.append(str(label))
 
