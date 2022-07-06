@@ -67,16 +67,10 @@ SPECS = {
 
 
 def main(
-    experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
-    dataset_type: DatasetType = typer.Option(DatasetType.full),
-    img_size: int = typer.Option(28)
-
+    dataset_type: DatasetType,
 ):
-
-    logger.info(f"experiment id: {experiment_id}")
     data_path = SPECS[dataset_type].data_path
     logger.info(f"dataset_type: {dataset_type}")
-    logger.info(f"image size: {img_size} * {img_size}")
 
     images = []
     labels = []
@@ -104,8 +98,8 @@ def main(
     # convert labels one hot labels
     onehot_labels = F.one_hot(labels, num_classes=10)
 
-    dataset = zip(images, onehot_labels)
+    dataset = torch.utils.data.TensorDataset(images, onehot_labels)
+
+    return dataset
 
 
-if __name__ == "__main__":
-    typer.run(main)
