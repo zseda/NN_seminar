@@ -66,14 +66,10 @@ SPECS = {
 }
 
 
-def main(
-    dataset_type: DatasetType,
-):
-    data_path = SPECS[dataset_type].data_path
-    logger.info(f"dataset_type: {dataset_type}")
-
+def get_dataset(dataset_type: DatasetType):
     images = []
     labels = []
+    data_path = SPECS[dataset_type].data_path
 
     def make_train_data(label, DIR):
         for img in tqdm(os.listdir(DIR)):
@@ -101,5 +97,3 @@ def main(
     dataset = torch.utils.data.TensorDataset(images, onehot_labels)
 
     return dataset
-
-
