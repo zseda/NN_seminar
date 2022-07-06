@@ -23,4 +23,4 @@ def get_dataloader(batch_size: int, num_workers: int, dataset_size: int):
         dataset=test_dataset, batch_size=batch_size, shuffle=False)
     mnist_dim = train_dataset.train_data.size(
         1) * train_dataset.train_data.size(2)
-    return train_loader, test_loader, mnist_dim
+    return train_loader, test_loader, mnist_dim, part_train_dataset
