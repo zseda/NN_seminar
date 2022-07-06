@@ -1,12 +1,16 @@
+import imp
 import torch
 import typer
 import timm
 from torchinfo import summary
 from loguru import logger
 from pathlib import Path
+from dataloader_real import get_dataloader
+from dataloader_synthetic import get_dataset
+from dataloader_synthetic import DatasetType
 
 
-def train_test_classifier():
+def train_test_classifier(loader_train, loader_test, device, epochs,):
     # classifier
     C = timm.create_model("efficientnet_b0", pretrained=True,
                           num_classes=10, in_chans=1)
@@ -15,17 +19,17 @@ def train_test_classifier():
 
     # training loop
     for e in range(epochs):
-        for img, label in train_ds: 
+        for img, label in loader_train:
 
             # predict
             # loss
             # backward
             # logging
 
-    # testing loop
-    # TODO: container for metrics per batch
+            # testing loop
+            # TODO: container for metrics per batch
     e.g. accuracy_list = list()
-    for img, label in test_ds:
+    for img, label in loader_test:
         # predict
         ...
         # calc metrics
@@ -33,10 +37,9 @@ def train_test_classifier():
 
     # calculate average metrics over all batches (single results in the container)
     average over all accuracy list
-    
+
     # save final test metrics
     save metrics
-
 
 
 def main(
@@ -49,14 +52,17 @@ def main(
     num_workers: int = typer.Option(16),
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
     # %80=48.000 %60=36.000 %40 =24.000 %20 = 12.000
-    dataset_size: int = typer.Option(48000)
+    dataset_size: int = typer.Option(48000),
+    dataset_type: DatasetType = typer.Option(DatasetType.full)
+
 
 ):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    loader_real =
-    loader_synthetic =
+    loader_real, loader_test, _ = get_dataloader(
+        batch_size=batch_size, num_workers=num_workers, dataset_size=dataset_size)
 
+    loader_synthetic = get_dataset(dataset_type=DatasetType.full)
 
     """
         -------------------------
@@ -79,7 +85,6 @@ def main(
     """
     train_test_classifier(with synthetic)
 
-    
 
 if __name__ == "__main__":
     typer.run(main)
