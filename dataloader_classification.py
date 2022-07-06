@@ -76,39 +76,35 @@ def main(
     logger.info(f"experiment id: {experiment_id}")
     data_path = SPECS[dataset_type].data_path
     logger.info(f"dataset_type: {dataset_type}")
-
     logger.info(f"image size: {img_size} * {img_size}")
 
     images = []
     labels = []
-
-    def assign_label(img, label):
-        return label
 
     def make_train_data(label, DIR):
         for img in tqdm(os.listdir(DIR)):
             path = os.path.join(DIR, img)
             img = cv2.imread(path, 0)
             images.append(np.array(img))
-            labels.append(str(label))
+            labels.append(int(label))
 
-    make_train_data('0', Path(data_path, "label_0"))
-    make_train_data('1', Path(data_path, "label_1"))
-    make_train_data('2', Path(data_path, "label_2"))
-    make_train_data('3', Path(data_path, "label_3"))
-    make_train_data('4', Path(data_path, "label_4"))
-    make_train_data('5', Path(data_path, "label_5"))
-    make_train_data('6', Path(data_path, "label_6"))
-    make_train_data('7', Path(data_path, "label_7"))
-    make_train_data('8', Path(data_path, "label_8"))
-    make_train_data('9', Path(data_path, "label_9"))
+    make_train_data(0, Path(data_path, "label_0"))
+    make_train_data(1, Path(data_path, "label_1"))
+    make_train_data(2, Path(data_path, "label_2"))
+    make_train_data(3, Path(data_path, "label_3"))
+    make_train_data(4, Path(data_path, "label_4"))
+    make_train_data(5, Path(data_path, "label_5"))
+    make_train_data(6, Path(data_path, "label_6"))
+    make_train_data(7, Path(data_path, "label_7"))
+    make_train_data(8, Path(data_path, "label_8"))
+    make_train_data(9, Path(data_path, "label_9"))
+    # convert labels & images to tensors
+    labels = torch.as_tensor(labels)
+    images = torch.as_tensor(images)
+    # convert labels one hot labels
+    onehot_labels = F.one_hot(labels, num_classes=10)
 
-    #labels = torch.from_numpy(labels)
-    #onehot_labels = F.one_hot(labels, num_classes=10)
-
-    # USE A LABELENCODER IF YOU WANT HERE
-
-    holder = zip(images, labels)
+    dataset = zip(images, onehot_labels)
 
 
 if __name__ == "__main__":
