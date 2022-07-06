@@ -44,22 +44,22 @@ SPECS = {
     ),
     DatasetType.percent80: ModelSpecs(
         dataset_type=DatasetType.percent80,
-        dataset_size=48000,
+        dataset_size=60000,
         model_path=Path("logs/part80datatrain/model_epoch_G500.pth")
     ),
     DatasetType.percent60: ModelSpecs(
         dataset_type=DatasetType.percent60,
-        dataset_size=36000,
+        dataset_size=60000,
         model_path=Path("logs/part60datatrain/model_epoch_G500.pth")
     ),
     DatasetType.percent40: ModelSpecs(
         dataset_type=DatasetType.percent40,
-        dataset_size=24000,
+        dataset_size=60000,
         model_path=Path("logs/part40datatrain/model_epoch_G500.pth")
     ),
     DatasetType.percent20: ModelSpecs(
         dataset_type=DatasetType.percent20,
-        dataset_size=12000,
+        dataset_size=60000,
         model_path=Path("logs/part20datatrain/model_epoch_G500.pth")
     ),
 }
