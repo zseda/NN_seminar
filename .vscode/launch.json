@@ -27,6 +27,15 @@
             "program": "dataloader_classification.py",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "train/test classifier",
+            "type": "python",
+            "request": "launch",
+            "program": "train_test_classification.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
+
     ]
 }
