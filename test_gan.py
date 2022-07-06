@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from tqdm import tqdm
 
 
-class DatasetType(Enum):
+class DatasetType(str, Enum):
     full = "full"
     percent80 = "percent80"
     percent60 = "percent60"
@@ -82,15 +82,16 @@ def main(
     to_pil = transforms.ToPILImage()
     #
     gan = Generator(g_input_dim=z_dim)
-    gan.load_state_dict(torch.load(SPECS[dataset_type].model_path.as_posix(), map_location=torch.device(device)))
+    gan.load_state_dict(torch.load(
+        SPECS[dataset_type].model_path.as_posix(), map_location=torch.device(device)))
     gan.eval()
 
     path_gan_predictions = SPECS[dataset_type].pred_path
     path_gan_predictions.mkdir(parents=True, exist_ok=True)
-    
+
     # create label directories
     for label_id in range(10):
-        label_dir = Path(path_gan_predictions, f"label{label_id}")
+        label_dir = Path(path_gan_predictions, f"label_{label_id}")
         label_dir.mkdir(parents=True, exist_ok=True)
 
     # one-hot label matrix
@@ -107,13 +108,16 @@ def main(
             # generate random noise for G
             z = torch.randn(size=(1, z_dim)).to(device)
 
+            label = label.view(1, -1)
+
             # generate images
             G_out, G_out_logits = gan(z, label)
             generated_samples = (G_out + 1)/2
 
             # save every generated images to corresponding directory
             im = to_pil(generated_samples[0])
-            im.save(Path(path_gan_predictions, f"label_{label_id}", f"prediction-{i}.png").as_posix())
+            im.save(Path(path_gan_predictions,
+                    f"label_{label_id}", f"prediction-{i}.png").as_posix())
 
 
 if __name__ == "__main__":

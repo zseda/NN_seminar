@@ -5,7 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Train",
+            "name": "train",
+            "type": "python",
+            "request": "launch",
+            "program": "train_modeldcgan.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "test gan",
             "type": "python",
             "request": "launch",
             "program": "test_gan.py",
