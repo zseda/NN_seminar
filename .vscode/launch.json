@@ -19,6 +19,14 @@
             "program": "test_gan.py",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "test data loader",
+            "type": "python",
+            "request": "launch",
+            "program": "dataloader_classification.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
