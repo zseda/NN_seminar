@@ -19,7 +19,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writer):
+def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writer, batch_size):
     # classifier
     C = timm.create_model("efficientnet_b0", pretrained=True,
                           num_classes=10, in_chans=1)
@@ -48,7 +48,7 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
                     'train/C_loss', C_loss.item(), global_step=global_step)
-            torch.cuda.empty_cache()
+            tb_writer.flush()
 
     accuracy_list = []
     f1_score_list = []
@@ -147,7 +147,7 @@ def main(
     """
     logger.info(f"Training real {dataset_type} FashionMNIST")
     train_test_classifier(loader_real, loader_test,
-                          device=device, epochs=epochs, lr=lr, tb_writer=real_tb_writer)
+                          device=device, epochs=epochs, lr=lr, tb_writer=real_tb_writer, batch_size=batch_size)
     logger.info("Finished training real {dataset_type} FashionMNIST")
 
     """
@@ -157,7 +157,7 @@ def main(
     """
     logger.info(f"Training synthetic {dataset_type} FashionMNIST")
     train_test_classifier(loader_synthetic, loader_test,
-                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer)
+                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer, batch_size=batch_size)
     logger.info("Finished training synthetic {dataset_type} FashionMNIST")
 
     """
@@ -166,8 +166,8 @@ def main(
         -------------------------
     """
     logger.info(f"Training real + synthetic {dataset_type} FashionMNIST")
-    train_test_classifier(loader_real_sythetic,
-                          device=device, epochs=epochs, lr=lr, tb_writer=real_syn_tb_writer)
+    train_test_classifier(loader_real_sythetic, loader_test,
+                          device=device, epochs=epochs, lr=lr, tb_writer=real_syn_tb_writer, batch_size=batch_size)
     logger.info(
         f"Finished training real + synthetic {dataset_type} FashionMNIST")
 
