@@ -32,6 +32,8 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
     # training loop
     for e in tqdm(range(epochs)):
         for img, label in loader_train:
+            img = img.to(device)
+            label = label.to(device)
             # for logging
             global_step += 1
             # predict
