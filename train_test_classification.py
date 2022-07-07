@@ -48,6 +48,7 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
             if global_step % 50 == 0:
                 tb_writer.add_scalar(
                     'train/C_loss', C_loss.item(), global_step=global_step)
+            torch.cuda.empty_cache()
 
     accuracy_list = []
     f1_score_list = []
