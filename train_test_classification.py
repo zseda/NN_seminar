@@ -12,38 +12,73 @@ from dataloader_synthetic import DatasetType
 from torch.utils.tensorboard import SummaryWriter
 import uuid
 import torch
+import torch.optim as optim
+import torch.nn as nn
+from torchmetrics import F1Score, Accuracy, Precision, Recall
+import numpy as np
 
 
-def train_test_classifier(loader_train, loader_test, device, epochs):
+def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writer):
     # classifier
     C = timm.create_model("efficientnet_b0", pretrained=True,
                           num_classes=10, in_chans=1)
     summary(C)
     C.to(device)
+    C_optimizer = optim.Adam(C.parameters(), lr=lr, betas=(0.5, 0.999))
+    criterion_classification = nn.CrossEntropyLoss()
 
     # training loop
     for e in range(epochs):
         for img, label in loader_train:
-
+            # for logging
+            global_step += 1
             # predict
+            C_out = C(img)
             # loss
+            C_loss = criterion_classification(C_out, label)
             # backward
+            C_loss.backward()
+            # optimize
+            C_optimizer.step()
             # logging
+            if global_step % 50 == 0:
+                tb_writer.add_scalar(
+                    'train/C_loss', C_loss.item(), global_step=global_step)
 
-            # testing loop
-            # TODO: container for metrics per batch
-    e.g. accuracy_list = list()
+    accuracy_list = []
+    f1_score_list = []
+    precision_list = []
+    recall_list = []
+
+    # testing loop
     for img, label in loader_test:
+
         # predict
-        ...
-        # calc metrics
-        accuracy_list.append(batch_accuracy)
+        C_out = C(img)
+
+        # calculate metrics
+        accuracy = (C_out, label)
+        f1_score = (C_out, label)
+        precision = (C_out, label)
+        recall = (C_out, label)
+
+        # append batch of metrics
+        accuracy_list.append(accuracy)
+        f1_score_list.append(f1_score)
+        precision_list.append(precision)
+        recall_list.append(recall)
 
     # calculate average metrics over all batches (single results in the container)
-    average over all accuracy list
+    avg_acc = np.mean(accuracy_list)
+    avg_f1 = np.mean(f1_score_list)
+    avg_precision = np.mean(precision_list)
+    avg_recall = np.mean(recall_list)
 
     # save final test metrics
-    save metrics
+    logger.info(f"Average accuracy {avg_acc}")
+    logger.info(f"Average f1_score {avg_f1}")
+    logger.info(f"Average precision {avg_precision}")
+    logger.info(f"Average recall {avg_recall}")
 
 
 def main(
@@ -59,6 +94,7 @@ def main(
 
 
 ):
+    logger.add(Path(root_path, 'train_test_classification.log'))
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"experiment id: {experiment_id}")
     logger.info(f"batch_size: {batch_size}")
@@ -104,7 +140,7 @@ def main(
     """
     logger.info(f"Training real {dataset_type} FashionMNIST")
     train_test_classifier(loader_real, loader_test,
-                          device=device, epochs=epochs, lr=lr)
+                          device=device, epochs=epochs, lr=lr, tb_writer=real_tb_writer)
     logger.info("Finished training real {dataset_type} FashionMNIST")
 
     """
@@ -114,7 +150,7 @@ def main(
     """
     logger.info(f"Training synthetic {dataset_type} FashionMNIST")
     train_test_classifier(loader_synthetic, loader_test,
-                          device=device, epochs=epochs, lr=lr)
+                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer)
     logger.info("Finished training synthetic {dataset_type} FashionMNIST")
 
     """
@@ -124,7 +160,7 @@ def main(
     """
     logger.info(f"Training real + synthetic {dataset_type} FashionMNIST")
     train_test_classifier(loader_real_sythetic,
-                          device=device, epochs=epochs, lr=lr)
+                          device=device, epochs=epochs, lr=lr, tb_writer=real_syn_tb_writer)
     logger.info(
         f"Finished training real + synthetic {dataset_type} FashionMNIST")
 
