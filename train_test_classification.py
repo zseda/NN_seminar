@@ -31,15 +31,15 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
 
     # training loop
     for e in tqdm(range(epochs)):
-        for img, label in loader_train:
+        for img_train, label_train in loader_train:
             img = img.to(device)
-            label = label.to(device)
+            label_train = label_train.to(device)
             # for logging
             global_step += 1
             # predict
-            C_out = C(img)
+            C_out_train = C(img_train)
             # loss
-            C_loss = criterion_classification(C_out, label)
+            C_loss = criterion_classification(C_out_train, label_train)
             # backward
             C_loss.backward()
             # optimize
