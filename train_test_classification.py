@@ -16,6 +16,7 @@ import torch.optim as optim
 import torch.nn as nn
 from torchmetrics import F1Score, Accuracy, Precision, Recall
 import numpy as np
+from tqdm import tqdm
 
 
 def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writer):
@@ -26,9 +27,10 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
     C.to(device)
     C_optimizer = optim.Adam(C.parameters(), lr=lr, betas=(0.5, 0.999))
     criterion_classification = nn.CrossEntropyLoss()
+    global_step = 0
 
     # training loop
-    for e in range(epochs):
+    for e in tqdm(range(epochs)):
         for img, label in loader_train:
             # for logging
             global_step += 1
@@ -121,13 +123,13 @@ def main(
 
     # synthetic fashionMNIST data loader
     synthetic_dataset = get_dataset(dataset_type=dataset_type)
-    synthetic_dataset = synthetic_dataset.shuffle(buffer_size=100, seed=42)
+    #synthetic_dataset = synthetic_dataset.shuffle(buffer_size=100, seed=42)
     loader_synthetic = torch.utils.data.DataLoader(
         dataset=synthetic_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
     # concatenate real and synthetic datasets
     real_synthetic_dataset = torch.utils.data.ConcatDataset(
-        real_dataset, synthetic_dataset)
+        [real_dataset, synthetic_dataset])
 
     # real+synthetic FashionMNIST data loader
     loader_real_sythetic = torch.utils.data.DataLoader(
