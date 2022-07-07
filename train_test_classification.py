@@ -56,6 +56,8 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
 
     # testing loop
     for img, label in loader_test:
+        img = img.to(device)
+        label = label.to(device)
 
         # predict
         C_out = C(img)
