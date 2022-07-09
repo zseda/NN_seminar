@@ -79,7 +79,7 @@ def get_dataset(dataset_type: DatasetType):
             img = img.astype(np.float32)
             img = img / 255.0
             images.append(np.array(img))
-            labels.append(int(label))
+            labels.append(label)
 
     make_train_data(0, Path(data_path, "label_0"))
     make_train_data(1, Path(data_path, "label_1"))
@@ -92,7 +92,7 @@ def get_dataset(dataset_type: DatasetType):
     make_train_data(8, Path(data_path, "label_8"))
     make_train_data(9, Path(data_path, "label_9"))
     # convert labels & images to tensors
-    labels = torch.as_tensor(labels)
+    labels = torch.as_tensor(labels).float()
     images = torch.as_tensor(images)
     # convert labels one hot labels
     onehot_labels = F.one_hot(labels, num_classes=10)
