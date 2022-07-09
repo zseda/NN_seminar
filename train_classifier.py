@@ -52,7 +52,7 @@ def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, 
             tb_writer.flush()
             C_losses.append(C_loss.data.item())
     # save C
-    torch.save(C.state_dict(), Path(log_dir, experiment_id))
+    torch.save(C.state_dict(), Path(log_dir))
 
 
 def main(
@@ -90,9 +90,10 @@ def main(
     real_syn_tb_writer = SummaryWriter(log_dir=real_syn_tb_path.as_posix())
 
     # real fashionMNIST data loader
-    loader_real, loader_test, _, real_dataset = get_dataloader(
+    _, _, _, real_dataset = get_dataloader(
         batch_size=batch_size, num_workers=num_workers, dataset_size=dataset_size)
-
+    loader_real = torch.utils.data.DataLoader(
+        dataset=real_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     # synthetic fashionMNIST data loader
     synthetic_dataset = get_dataset(dataset_type=dataset_type)
     # synthetic_dataset = synthetic_dataset.shuffle(buffer_size=100, seed=42)

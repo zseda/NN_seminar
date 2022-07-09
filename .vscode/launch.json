@@ -44,6 +44,14 @@
             "program": "train_classifier.py",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "test syn",
+            "type": "python",
+            "request": "launch",
+            "program": "test_synthetic_dataset.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
 
     ]
