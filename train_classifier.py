@@ -53,7 +53,7 @@ def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, 
             C_losses.append(C_loss.data.item())
         # save C
         if e % 5 == 0:
-            torch.save(C.state_dict(), Path(log_dir, "logs",
+            torch.save(C.state_dict(), Path(log_dir,
                                             experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
 
 
