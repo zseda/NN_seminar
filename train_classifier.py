@@ -19,7 +19,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writer, batch_size):
+def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, experiment_id):
     # classifier
     C = timm.create_model("efficientnet_b0", pretrained=True,
                           num_classes=10, in_chans=1)
@@ -28,6 +28,7 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
     C_optimizer = optim.Adam(C.parameters(), lr=lr, betas=(0.5, 0.999))
     criterion_classification = nn.CrossEntropyLoss()
     global_step = 0
+    C_losses = []
 
     # training loop
     for e in tqdm(range(epochs)):
@@ -49,43 +50,11 @@ def train_test_classifier(loader_train, loader_test, device, epochs, lr, tb_writ
                 tb_writer.add_scalar(
                     'train/C_loss', C_loss.item(), global_step=global_step)
             tb_writer.flush()
-
-    accuracy_list = []
-    f1_score_list = []
-    precision_list = []
-    recall_list = []
-
-    # testing loop
-    for img, label in loader_test:
-        img = img.to(device)
-        label = label.to(device)
-
-        # predict
-        C_out = C(img)
-
-        # calculate metrics
-        accuracy = (C_out, label)
-        f1_score = (C_out, label)
-        precision = (C_out, label)
-        recall = (C_out, label)
-
-        # append batch of metrics
-        accuracy_list.append(accuracy)
-        f1_score_list.append(f1_score)
-        precision_list.append(precision)
-        recall_list.append(recall)
-
-    # calculate average metrics over all batches (single results in the container)
-    avg_acc = np.mean(accuracy_list)
-    avg_f1 = np.mean(f1_score_list)
-    avg_precision = np.mean(precision_list)
-    avg_recall = np.mean(recall_list)
-
-    # save final test metrics
-    logger.info(f"Average accuracy {avg_acc}")
-    logger.info(f"Average f1_score {avg_f1}")
-    logger.info(f"Average precision {avg_precision}")
-    logger.info(f"Average recall {avg_recall}")
+            C_losses.append(C_loss.data.item())
+        # save C
+        if e % 5 == 0:
+            torch.save(C.state_dict(), Path(log_dir, "logs",
+                                            experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
 
 
 def main(
@@ -146,8 +115,8 @@ def main(
         -------------
     """
     logger.info(f"Training real {dataset_type} FashionMNIST")
-    train_test_classifier(loader_real, loader_test,
-                          device=device, epochs=epochs, lr=lr, tb_writer=real_tb_writer, batch_size=batch_size)
+    train_test_classifier(loader_real,
+                          device=device, epochs=epochs, lr=lr, tb_writer=real_tb_writer, log_dir=real_tb_path, experiment_id=experiment_id)
     logger.info("Finished training real {dataset_type} FashionMNIST")
 
     """
@@ -156,8 +125,8 @@ def main(
         ------------------
     """
     logger.info(f"Training synthetic {dataset_type} FashionMNIST")
-    train_test_classifier(loader_synthetic, loader_test,
-                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer, batch_size=batch_size)
+    train_test_classifier(loader_synthetic,
+                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer, log_dir=syn_tb_writer, experiment_id=experiment_id)
     logger.info("Finished training synthetic {dataset_type} FashionMNIST")
 
     """
@@ -166,8 +135,8 @@ def main(
         -------------------------
     """
     logger.info(f"Training real + synthetic {dataset_type} FashionMNIST")
-    train_test_classifier(loader_real_sythetic, loader_test,
-                          device=device, epochs=epochs, lr=lr, tb_writer=real_syn_tb_writer, batch_size=batch_size)
+    train_test_classifier(loader_real_sythetic,
+                          device=device, epochs=epochs, lr=lr, tb_writer=real_syn_tb_writer, log_dir=real_syn_tb_path, experiment_id=experiment_id)
     logger.info(
         f"Finished training real + synthetic {dataset_type} FashionMNIST")
 
