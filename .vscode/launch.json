@@ -36,6 +36,15 @@
             "console": "integratedTerminal",
             "justMyCode": true
         }
+        ,
+        {
+            "name": "train/classifier",
+            "type": "python",
+            "request": "launch",
+            "program": "train_classifier.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
 
     ]
 }

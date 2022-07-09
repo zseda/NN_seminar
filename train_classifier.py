@@ -51,10 +51,8 @@ def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, 
                     'train/C_loss', C_loss.item(), global_step=global_step)
             tb_writer.flush()
             C_losses.append(C_loss.data.item())
-        # save C
-        if e % 5 == 0:
-            torch.save(C.state_dict(), Path(log_dir,
-                                            experiment_id, f"model_epoch_D{e:0>3}.pth").as_posix())
+    # save C
+    torch.save(C.state_dict(), Path(log_dir, experiment_id))
 
 
 def main(
@@ -97,7 +95,7 @@ def main(
 
     # synthetic fashionMNIST data loader
     synthetic_dataset = get_dataset(dataset_type=dataset_type)
-    #synthetic_dataset = synthetic_dataset.shuffle(buffer_size=100, seed=42)
+    # synthetic_dataset = synthetic_dataset.shuffle(buffer_size=100, seed=42)
     loader_synthetic = torch.utils.data.DataLoader(
         dataset=synthetic_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
