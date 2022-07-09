@@ -52,7 +52,7 @@ def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, 
             tb_writer.flush()
             C_losses.append(C_loss.data.item())
     # save C
-    torch.save(C.state_dict(), Path(log_dir))
+    torch.save(C.state_dict(), Path(log_dir, "classifier.pth"))
 
 
 def main(
