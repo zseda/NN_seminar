@@ -92,10 +92,10 @@ def get_dataset(dataset_type: DatasetType):
     make_train_data(8, Path(data_path, "label_8"))
     make_train_data(9, Path(data_path, "label_9"))
     # convert labels & images to tensors
-    labels = torch.as_tensor(labels).float()
+    labels = torch.as_tensor(labels)
     images = torch.as_tensor(images)
     # convert labels one hot labels
-    onehot_labels = F.one_hot(labels, num_classes=10)
+    onehot_labels = F.one_hot(labels, num_classes=10).float()
 
     dataset = torch.utils.data.TensorDataset(images, onehot_labels)
 
