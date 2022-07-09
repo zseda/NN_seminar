@@ -2,6 +2,8 @@ from dataloader_synthetic import get_dataset
 from dataloader_synthetic import DatasetType
 import torch
 import typer
+from loguru import logger
+import numpy as np
 
 
 def main(
@@ -18,6 +20,11 @@ def main(
     # synthetic_dataset = synthetic_dataset.shuffle(buffer_size=100, seed=42)
     loader_synthetic = torch.utils.data.DataLoader(
         dataset=synthetic_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    for i, data in enumerate(loader_synthetic, 0):
+        # get the inputs
+        inputs, labels = data
+        inputs = np.array(inputs)
+        print(inputs.shape)
 
 
 if __name__ == "__main__":
