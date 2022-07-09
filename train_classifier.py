@@ -125,7 +125,7 @@ def main(
     """
     logger.info(f"Training synthetic {dataset_type} FashionMNIST")
     train_test_classifier(loader_synthetic,
-                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer, log_dir=syn_tb_writer, experiment_id=experiment_id)
+                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer, log_dir=syn_tb_path, experiment_id=experiment_id)
     logger.info("Finished training synthetic {dataset_type} FashionMNIST")
 
     """

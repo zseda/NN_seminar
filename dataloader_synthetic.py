@@ -75,6 +75,7 @@ def get_dataset(dataset_type: DatasetType):
         for img in tqdm(os.listdir(DIR)):
             path = os.path.join(DIR, img)
             img = cv2.imread(path, 0)
+            img = img[np.newaxis, ...]
             images.append(np.array(img))
             labels.append(int(label))
 
