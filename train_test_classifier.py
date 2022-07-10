@@ -20,15 +20,15 @@ from tqdm import tqdm
 
 
 def test_classifier(C, loader_test, tb_writer, device, current_epoch):
-    accuracy = Accuracy()
-    f1score = F1Score()
-    precision = Precision()
-    recall = Recall()
+    accuracy = Accuracy().to(device)
+    f1score = F1Score().to(device)
+    precision = Precision().to(device)
+    recall = Recall().to(device)
 
-    accuracy_top3 = Accuracy(top_k=3)
-    f1score_top3 = F1Score(top_k=3)
-    precision_top3 = Precision(top_k=3)
-    recall_top3 = Recall(top_k=3)
+    accuracy_top3 = Accuracy(top_k=3).to(device)
+    f1score_top3 = F1Score(top_k=3).to(device)
+    precision_top3 = Precision(top_k=3).to(device)
+    recall_top3 = Recall(top_k=3).to(device)
 
     # testing loop
     for img, label in loader_test:
@@ -37,6 +37,7 @@ def test_classifier(C, loader_test, tb_writer, device, current_epoch):
 
         # predict
         C_out = C(img)
+        # C_out = torch.argmax(C_out, dim=1)
 
         # update metrics
         accuracy.update(preds=C_out, target=label)
@@ -66,48 +67,48 @@ def test_classifier(C, loader_test, tb_writer, device, current_epoch):
     tb_writer.add_scalar(
         'test/accuracy/top1',
         avg_acc,
-        global_step=e
+        global_step=current_epoch
     )
     tb_writer.add_scalar(
         'test/accuracy/top3',
         avg_acc_top3,
-        global_step=e
+        global_step=current_epoch
     )
 
     # f1
     tb_writer.add_scalar(
         'test/f1/top1',
         avg_f1,
-        global_step=e
+        global_step=current_epoch
     )
     tb_writer.add_scalar(
         'test/f1/top3',
         avg_f1_top3,
-        global_step=e
+        global_step=current_epoch
     )
 
     # precision
     tb_writer.add_scalar(
         'test/precision/top1',
         avg_precision,
-        global_step=e
+        global_step=current_epoch
     )
     tb_writer.add_scalar(
         'test/precision/top3',
         avg_precision_top3,
-        global_step=e
+        global_step=current_epoch
     )
 
     # recall
     tb_writer.add_scalar(
         'test/recall/top1',
         avg_recall,
-        global_step=e
+        global_step=current_epoch
     )
     tb_writer.add_scalar(
         'test/recall/top3',
         avg_recall_top3,
-        global_step=e
+        global_step=current_epoch
     )
 
     # flush tensorboard

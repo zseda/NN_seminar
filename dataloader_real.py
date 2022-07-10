@@ -21,7 +21,7 @@ def get_dataloader(batch_size: int, num_workers: int, dataset_size: int, with_ta
     train_dataset = datasets.FashionMNIST(
         root='./fashion_mnist_data/', train=True, transform=transform, target_transform=target_transform, download=True)
     test_dataset = datasets.FashionMNIST(
-        root='./fashion_mnist_data/', train=False, transform=transform, target_transform=target_transform, download=False)
+        root='./fashion_mnist_data/', train=False, transform=transform, download=False)
     # get partial dataset for different generators
     part_train_dataset = torch.utils.data.random_split(
         train_dataset, [dataset_size, len(train_dataset)-dataset_size], generator=torch.Generator().manual_seed(42))[0]
