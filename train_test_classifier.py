@@ -19,7 +19,111 @@ import numpy as np
 from tqdm import tqdm
 
 
-def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, experiment_id):
+def test_classifier(C, loader_test, tb_writer, device, current_epoch):
+    accuracy = Accuracy()
+    f1score = F1Score()
+    precision = Precision()
+    recall = Recall()
+
+    accuracy_top3 = Accuracy(top_k=3)
+    f1score_top3 = F1Score(top_k=3)
+    precision_top3 = Precision(top_k=3)
+    recall_top3 = Recall(top_k=3)
+
+    # testing loop
+    for img, label in loader_test:
+        img = img.to(device)
+        label = label.to(device)
+
+        # predict
+        C_out = C(img)
+
+        # update metrics
+        accuracy.update(preds=C_out, target=label)
+        f1score.update(preds=C_out, target=label)
+        precision.update(preds=C_out, target=label)
+        recall.update(preds=C_out, target=label)
+
+        # update top3 metrics
+        accuracy_top3.update(preds=C_out, target=label)
+        f1score_top3.update(preds=C_out, target=label)
+        precision_top3.update(preds=C_out, target=label)
+        recall_top3.update(preds=C_out, target=label)
+
+    # calculate average metrics over all batches (single results in the container)
+    avg_acc = accuracy.compute()
+    avg_f1 = f1score.compute()
+    avg_precision = precision.compute()
+    avg_recall = recall.compute()
+
+    avg_acc_top3 = accuracy_top3.compute()
+    avg_f1_top3 = f1score_top3.compute()
+    avg_precision_top3 = precision_top3.compute()
+    avg_recall_top3 = recall_top3.compute()
+
+    # write to tensorboard 
+    # accuracy
+    tb_writer.add_scalar(
+        'test/accuracy/top1',
+        avg_acc,
+        global_step=e
+    )
+    tb_writer.add_scalar(
+        'test/accuracy/top3',
+        avg_acc_top3,
+        global_step=e
+    )
+
+    # f1
+    tb_writer.add_scalar(
+        'test/f1/top1',
+        avg_f1,
+        global_step=e
+    )
+    tb_writer.add_scalar(
+        'test/f1/top3',
+        avg_f1_top3,
+        global_step=e
+    )
+
+    # precision
+    tb_writer.add_scalar(
+        'test/precision/top1',
+        avg_precision,
+        global_step=e
+    )
+    tb_writer.add_scalar(
+        'test/precision/top3',
+        avg_precision_top3,
+        global_step=e
+    )
+
+    # recall
+    tb_writer.add_scalar(
+        'test/recall/top1',
+        avg_recall,
+        global_step=e
+    )
+    tb_writer.add_scalar(
+        'test/recall/top3',
+        avg_recall_top3,
+        global_step=e
+    )
+
+    # flush tensorboard
+    tb_writer.flush()
+
+
+def train_test_classifier(
+        loader_train,
+        device,
+        epochs,
+        lr,
+        tb_writer,
+        log_dir,
+        experiment_id,
+        loader_test
+    ):
     # classifier
     C = timm.create_model("efficientnet_b0", pretrained=True,
                           num_classes=10, in_chans=1)
@@ -56,6 +160,16 @@ def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, 
                     'train/C_loss', C_loss.item(), global_step=global_step)
             tb_writer.flush()
             C_losses.append(C_loss.data.item())
+        
+        # end of epoch
+        test_classifier(
+            C=C,
+            loader_test=loader_test,
+            tb_writer=tb_writer,
+            device=device,
+            current_epoch=e
+        )
+
     # save C
     torch.save(C.state_dict(), Path(log_dir, "classifier.pth"))
 
@@ -95,7 +209,7 @@ def main(
     real_syn_tb_writer = SummaryWriter(log_dir=real_syn_tb_path.as_posix())
 
     # real fashionMNIST data loader
-    _, _, _, real_dataset = get_dataloader(
+    _, loader_test, _, real_dataset = get_dataloader(
         batch_size=batch_size,
         num_workers=num_workers,
         dataset_size=dataset_size,
@@ -123,8 +237,16 @@ def main(
         -------------
     """
     logger.info(f"Training real {dataset_type} FashionMNIST")
-    train_test_classifier(loader_real,
-                          device=device, epochs=epochs, lr=lr, tb_writer=real_tb_writer, log_dir=real_tb_path, experiment_id=experiment_id)
+    train_test_classifier(
+        loader_real,
+        device=device,
+        epochs=epochs,
+        lr=lr,
+        tb_writer=real_tb_writer,
+        log_dir=real_tb_path,
+        experiment_id=experiment_id,
+        loader_test=loader_test
+    )
     logger.info(f"Finished training real {dataset_type} FashionMNIST")
 
     """
@@ -133,8 +255,16 @@ def main(
         ------------------
     """
     logger.info(f"Training synthetic {dataset_type} FashionMNIST")
-    train_test_classifier(loader_synthetic,
-                          device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer, log_dir=syn_tb_path, experiment_id=experiment_id)
+    train_test_classifier(
+        loader_synthetic,
+        device=device,
+        epochs=epochs,
+        lr=lr,
+        tb_writer=syn_tb_writer,
+        log_dir=syn_tb_path,
+        experiment_id=experiment_id,
+        loader_test=loader_test
+    )
     logger.info(f"Finished training synthetic {dataset_type} FashionMNIST")
 
     """
@@ -143,8 +273,16 @@ def main(
         -------------------------
     """
     logger.info(f"Training real + synthetic {dataset_type} FashionMNIST")
-    train_test_classifier(loader_real_sythetic,
-                          device=device, epochs=epochs, lr=lr, tb_writer=real_syn_tb_writer, log_dir=real_syn_tb_path, experiment_id=experiment_id)
+    train_test_classifier(
+        loader_real_sythetic,
+        device=device,
+        epochs=epochs,
+        lr=lr,
+        tb_writer=real_syn_tb_writer,
+        log_dir=real_syn_tb_path,
+        experiment_id=experiment_id,
+        loader_test=loader_test
+    )
     logger.info(f"Finished training real + synthetic {dataset_type} FashionMNIST")
 
 
