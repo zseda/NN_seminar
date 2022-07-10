@@ -23,7 +23,7 @@ def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, 
     # classifier
     C = timm.create_model("efficientnet_b0", pretrained=True,
                           num_classes=10, in_chans=1)
-    summary(C)
+    # summary(C)
     C.to(device)
     C_optimizer = optim.Adam(C.parameters(), lr=lr, betas=(0.5, 0.999))
     criterion_classification = nn.CrossEntropyLoss()
@@ -33,6 +33,11 @@ def train_test_classifier(loader_train, device, epochs, lr, tb_writer, log_dir, 
     # training loop
     for e in tqdm(range(epochs)):
         for img_train, label_train in loader_train:
+            # logger.info(img_train.shape)
+            # logger.info(img_train.dtype)
+            # logger.info(label_train.shape)
+            # logger.info(label_train.dtype)
+            # break
             img_train = img_train.to(device)
             label_train = label_train.to(device)
             # for logging
@@ -91,7 +96,11 @@ def main(
 
     # real fashionMNIST data loader
     _, _, _, real_dataset = get_dataloader(
-        batch_size=batch_size, num_workers=num_workers, dataset_size=dataset_size)
+        batch_size=batch_size,
+        num_workers=num_workers,
+        dataset_size=dataset_size,
+        with_target_transform=True
+    )
     loader_real = torch.utils.data.DataLoader(
         dataset=real_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     # synthetic fashionMNIST data loader
@@ -116,7 +125,7 @@ def main(
     logger.info(f"Training real {dataset_type} FashionMNIST")
     train_test_classifier(loader_real,
                           device=device, epochs=epochs, lr=lr, tb_writer=real_tb_writer, log_dir=real_tb_path, experiment_id=experiment_id)
-    logger.info("Finished training real {dataset_type} FashionMNIST")
+    logger.info(f"Finished training real {dataset_type} FashionMNIST")
 
     """
         ------------------
@@ -126,7 +135,7 @@ def main(
     logger.info(f"Training synthetic {dataset_type} FashionMNIST")
     train_test_classifier(loader_synthetic,
                           device=device, epochs=epochs, lr=lr, tb_writer=syn_tb_writer, log_dir=syn_tb_path, experiment_id=experiment_id)
-    logger.info("Finished training synthetic {dataset_type} FashionMNIST")
+    logger.info(f"Finished training synthetic {dataset_type} FashionMNIST")
 
     """
         -------------------------
@@ -136,8 +145,7 @@ def main(
     logger.info(f"Training real + synthetic {dataset_type} FashionMNIST")
     train_test_classifier(loader_real_sythetic,
                           device=device, epochs=epochs, lr=lr, tb_writer=real_syn_tb_writer, log_dir=real_syn_tb_path, experiment_id=experiment_id)
-    logger.info(
-        f"Finished training real + synthetic {dataset_type} FashionMNIST")
+    logger.info(f"Finished training real + synthetic {dataset_type} FashionMNIST")
 
 
 if __name__ == "__main__":

@@ -1,15 +1,25 @@
 import torch
+import torch.nn.functional as F
 from torchvision import transforms, datasets
 
 
-def get_dataloader(batch_size: int, num_workers: int, dataset_size: int):
+def get_dataloader(batch_size: int, num_workers: int, dataset_size: int, with_target_transform: bool = False):
     # MNIST Dataset
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize([0.5], [0.5])])
+        transforms.Normalize([0.5], [0.5])]
+    )
+
+    if with_target_transform:
+        target_transform = transforms.Compose([
+            lambda x: torch.tensor(x),
+            lambda x: F.one_hot(x, num_classes=10).float()
+        ])
+    else:
+        target_transform = None
 
     train_dataset = datasets.FashionMNIST(
-        root='./fashion_mnist_data/', train=True, transform=transform, download=True)
+        root='./fashion_mnist_data/', train=True, transform=transform, target_transform=target_transform, download=True)
     test_dataset = datasets.FashionMNIST(
         root='./fashion_mnist_data/', train=False, transform=transform, download=False)
     # get partial dataset for different generators
