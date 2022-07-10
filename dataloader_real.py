@@ -3,7 +3,13 @@ import torch.nn.functional as F
 from torchvision import transforms, datasets
 
 
-def get_dataloader(batch_size: int, num_workers: int, dataset_size: int, with_target_transform: bool = False):
+def get_dataloader(
+        batch_size: int,
+        num_workers: int,
+        dataset_size: int,
+        with_target_transform: bool = False,
+        without_ankle_boots: bool = False
+    ):
     # MNIST Dataset
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -22,6 +28,10 @@ def get_dataloader(batch_size: int, num_workers: int, dataset_size: int, with_ta
         root='./fashion_mnist_data/', train=True, transform=transform, target_transform=target_transform, download=True)
     test_dataset = datasets.FashionMNIST(
         root='./fashion_mnist_data/', train=False, transform=transform, download=False)
+    if without_ankle_boots:
+        idx = test_dataset.targets < 9
+        test_dataset.targets = test_dataset.targets[idx]
+        test_dataset.data = test_dataset.data[idx]
     # get partial dataset for different generators
     part_train_dataset = torch.utils.data.random_split(
         train_dataset, [dataset_size, len(train_dataset)-dataset_size], generator=torch.Generator().manual_seed(42))[0]

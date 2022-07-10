@@ -66,7 +66,7 @@ SPECS = {
 }
 
 
-def get_dataset(dataset_type: DatasetType):
+def get_dataset(dataset_type: DatasetType, with_ankle_boot: bool = True):
     images = []
     labels = []
     data_path = SPECS[dataset_type].data_path
@@ -90,7 +90,8 @@ def get_dataset(dataset_type: DatasetType):
     make_train_data(6, Path(data_path, "label_6"))
     make_train_data(7, Path(data_path, "label_7"))
     make_train_data(8, Path(data_path, "label_8"))
-    make_train_data(9, Path(data_path, "label_9"))
+    if with_ankle_boot:
+        make_train_data(9, Path(data_path, "label_9"))
     # convert labels & images to tensors
     labels = torch.as_tensor(labels)
     images = torch.as_tensor(images)

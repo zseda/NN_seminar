@@ -184,9 +184,8 @@ def main(
     experiment_id: str = typer.Option(f"debug-{uuid.uuid4()}"),
     # %100= 60.000 %80=48.000 %60=36.000 %40 =24.000 %20 = 12.000
     dataset_size: int = typer.Option(60000),
-    dataset_type: DatasetType = typer.Option(DatasetType.full)
-
-
+    dataset_type: DatasetType = typer.Option(DatasetType.full),
+    ankle_boots: bool = typer.Option(True)
 ):
     logger.add(Path(root_path, 'train_test_classification.log'))
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -214,12 +213,13 @@ def main(
         batch_size=batch_size,
         num_workers=num_workers,
         dataset_size=dataset_size,
-        with_target_transform=True
+        with_target_transform=True,
+        without_ankle_boots=not(ankle_boots)
     )
     loader_real = torch.utils.data.DataLoader(
         dataset=real_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     # synthetic fashionMNIST data loader
-    synthetic_dataset = get_dataset(dataset_type=dataset_type)
+    synthetic_dataset = get_dataset(dataset_type=dataset_type, with_ankle_boot=ankle_boots)
     # synthetic_dataset = synthetic_dataset.shuffle(buffer_size=100, seed=42)
     loader_synthetic = torch.utils.data.DataLoader(
         dataset=synthetic_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
